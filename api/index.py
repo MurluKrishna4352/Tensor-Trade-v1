@@ -29,7 +29,6 @@ logger.info("=" * 50)
 try:
     from main import app
     logger.info("✓ Successfully imported main app")
-    handler = app
 except Exception as e:
     logger.error(f"✗ Failed to import main app: {e}", exc_info=True)
     
@@ -64,5 +63,4 @@ except Exception as e:
     def root_error():
         return health_error()
     
-    handler = app
     logger.info("✓ Created fallback error app")

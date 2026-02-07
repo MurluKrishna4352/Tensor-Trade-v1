@@ -107,5 +107,4 @@ def health():
         }
     }
 
-handler = app
 logger.info("✓ Test app created successfully")
