@@ -397,15 +397,33 @@ def root():
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint with environment diagnostics."""
+    import os
+    
+    # Check API keys
+    api_keys_status = {
+        "groq": "✓" if os.getenv("GROQ_API_KEY") else "✗",
+        "openrouter": "✓" if os.getenv("OPENROUTER_API_KEY") else "✗",
+        "mistral": "✓" if os.getenv("MISTRAL_API_KEY") else "✗",
+        "gemini": "✓" if os.getenv("GEMINI_API_KEY") else "✗"
+    }
+    
+    # Check if at least one key is available
+    has_llm_access = any(val == "✓" for val in api_keys_status.values())
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if has_llm_access else "degraded",
         "version": "2.0.0",
+        "environment": {
+            "api_keys": api_keys_status,
+            "llm_available": has_llm_access,
+            "warning": "Missing API keys - LLM features unavailable" if not has_llm_access else None
+        },
         "services": {
             "behavior_monitor": "operational",
-            "market_watcher": "operational (5 LLM council)",
-            "narrator": "operational",
-            "persona": "operational",
+            "market_watcher": "operational (5 LLM council)" if has_llm_access else "degraded - no API keys",
+            "narrator": "operational" if has_llm_access else "degraded - no API keys",
+            "persona": "operational" if has_llm_access else "degraded - no API keys",
             "moderator": "operational",
             "economic_calendar": "operational",
             "trade_history": "operational (synthetic)"
