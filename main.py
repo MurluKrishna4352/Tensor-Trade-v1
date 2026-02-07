@@ -17,6 +17,8 @@ from llm_council.services.debate_engine import get_council_analysis
 # Import services
 from services.economic_calendar import EconomicCalendarService
 from services.trade_history import get_trade_history_service
+from services.market_metrics import get_market_metrics_service
+from services.asset_validator import validate_asset_symbol, AssetValidationError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -44,6 +46,19 @@ class MarketWatcherAgent:
         try:
             # Extract asset symbol from market_event or context
             asset = context.get("asset", "AAPL")  # Default to AAPL if not specified
+            
+            # Validate asset symbol
+            from services.asset_validator import validate_asset_symbol
+            is_valid, error_msg = validate_asset_symbol(asset)
+            if not is_valid:
+                logger.error(f"Invalid asset symbol: {error_msg}")
+                context["market_opinions"] = [f"Invalid asset symbol '{asset}': {error_msg}"]
+                context["asset"] = asset
+                context["price_change_pct"] = "0.0"
+                return context
+            
+            asset = asset.strip().upper()
+            context["asset"] = asset
             
             # Get economic calendar data
             try:
@@ -142,6 +157,14 @@ async def analyze_asset(asset: str, user_id: Optional[str] = "default_user"):
     Returns:
         Complete multi-agent analysis with economic calendar impacts
     """
+    # Validate asset symbol first
+    is_valid, error_msg = validate_asset_symbol(asset)
+    if not is_valid:
+        logger.warning(f"Invalid asset symbol rejected: {asset} - {error_msg}")
+        raise HTTPException(status_code=400, detail=error_msg)
+    
+    # Normalize symbol to uppercase
+    asset = asset.strip().upper()
     logger.info(f"Starting automated analysis for {asset} (user: {user_id})")
     
     try:
@@ -204,12 +227,35 @@ async def analyze_asset(asset: str, user_id: Optional[str] = "default_user"):
                 logger.error(f"✗ {agent_name} failed: {e}")
                 context[f"{agent_name}_error"] = str(e)
         
-        # 7. Format response
+        # 7. Calculate market metrics (VIX, regime, risk index)
+        metrics_service = get_market_metrics_service()
+        market_metrics = metrics_service.get_all_metrics(
+            symbol=asset,
+            agent_data={
+                "consensus_points": context.get("consensus_points", []),
+                "disagreement_topics": context.get("disagreement_topics", []),
+                "council_opinions": context.get("market_opinions", [])
+            }
+        )
+        
+        logger.info(f"Market metrics: VIX={market_metrics['vix']}, Regime={market_metrics['market_regime']}, Risk Index={market_metrics['risk_index']}")
+        
+        # 8. Format response
         response = {
             "asset": asset,
             "user_id": user_id,
             "analysis_type": "automated",
             "persona_selected": persona_style,
+            
+            # Market metrics (VIX, regime, risk index)
+            "market_metrics": {
+                "vix": market_metrics["vix"],
+                "market_regime": market_metrics["market_regime"],
+                "risk_index": market_metrics["risk_index"],
+                "asset_volatility": market_metrics["asset_volatility"],
+                "risk_level": metrics_service.get_risk_level_description(market_metrics["risk_index"]),
+                "regime_color": metrics_service.get_regime_color(market_metrics["market_regime"])
+            },
             
             # Trade summary
             "trade_history": {
@@ -251,6 +297,8 @@ async def analyze_asset(asset: str, user_id: Optional[str] = "default_user"):
                 "styled_message": context.get("final_message", ""),
                 "moderated_output": context.get("moderated_output", "")
             },
+            
+            "persona_post": context.get("persona_post", {"x": "", "linkedin": ""}),
             
             # Metadata
             "timestamp": economic_data.get("timestamp"),
@@ -320,9 +368,9 @@ async def run_agents(request: RunAgentsRequest):
     }
 
 
-@app.get("/")
+@app.get("/api")
 def root():
-    """Root endpoint with API info."""
+    """Root API endpoint with API info."""
     return {
         "message": "Multi-Agent Trading Psychology API",
         "version": "2.0.0",

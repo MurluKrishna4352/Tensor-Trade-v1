@@ -8,12 +8,14 @@ pydantic>=2.0.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 
-# Optional dependencies for full functionality
-# Uncomment and install if you want to use these features:
+# AI/LLM dependencies
+groq>=0.4.0
+aiohttp>=3.9.0
 
-# For NarratorAgent (AI-powered session summaries)
-# groq>=0.4.0
+# Market data dependencies
+yfinance>=0.2.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
 
 # For development
-# pytest>=7.4.0
-# black>=23.0.0
+pytest>=7.4.0

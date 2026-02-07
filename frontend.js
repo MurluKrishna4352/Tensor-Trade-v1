@@ -1,10 +1,296 @@
 // Trading Analyst Dashboard - Deriv Hackathon
 // Professional Trading Intelligence Platform
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:8000';
+// API Configuration - use relative path for production, localhost for local dev
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8000' 
+    : '';  // Use relative paths in production (Vercel)
 let currentAnalysisData = null;
 let isAnalyzing = false;
+let currentPersonaPosts = { x: '', linkedin: '' };
+
+// Share to X Function
+function shareToX() {
+    // Try to get the post from multiple sources
+    let xPost = currentPersonaPosts.x;
+    
+    // Fallback: check if analysis data has persona_post
+    if (!xPost && currentAnalysisData && currentAnalysisData.persona_post && currentAnalysisData.persona_post.x) {
+        xPost = currentAnalysisData.persona_post.x;
+        currentPersonaPosts.x = xPost; // Update the cache
+    }
+    
+    if (!xPost) {
+        console.error('No X post found. Current state:', {
+            currentPersonaPosts,
+            hasAnalysisData: !!currentAnalysisData,
+            personaPostInData: currentAnalysisData?.persona_post
+        });
+        alert('No X post available. Please run an analysis first.\n\nIf you just ran an analysis, the PersonaAgent may not have generated content yet.');
+        return;
+    }
+    
+    // Check if the post is an error message
+    if (xPost.includes('[Error:') || xPost.startsWith('[Error')) {
+        alert('PersonaAgent Error: ' + xPost + '\n\nThe AI service may be rate limited. Please try again in a few moments.');
+        return;
+    }
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(xPost).then(() => {
+        // Create a modal/notification
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(29, 161, 242, 0.95);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+            max-width: 500px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                <div style="font-size: 18px; font-weight: 600; color: white;">X Post Copied!</div>
+                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); text-align: center; line-height: 1.5; max-height: 200px; overflow-y: auto; padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; width: 100%;">${xPost}</div>
+                <button onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('${xPost.replace(/'/g, "\\'").replace(/\n/g, ' ')}'), '_blank'); this.parentElement.parentElement.remove();" style="background: white; color: #1DA1F2; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Open X to Post</button>
+                <button onclick="this.parentElement.parentElement.remove();" style="background: transparent; color: white; border: 1px solid white; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Close</button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (modal.parentElement) {
+                modal.remove();
+            }
+        }, 10000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy post to clipboard');
+    });
+}
+
+// Share to LinkedIn Function
+function shareToLinkedIn() {
+    // Try to get the post from multiple sources
+    let linkedinPost = currentPersonaPosts.linkedin;
+    
+    // Fallback: check if analysis data has persona_post
+    if (!linkedinPost && currentAnalysisData && currentAnalysisData.persona_post && currentAnalysisData.persona_post.linkedin) {
+        linkedinPost = currentAnalysisData.persona_post.linkedin;
+        currentPersonaPosts.linkedin = linkedinPost; // Update the cache
+    }
+    
+    if (!linkedinPost) {
+        console.error('No LinkedIn post found. Current state:', {
+            currentPersonaPosts,
+            hasAnalysisData: !!currentAnalysisData,
+            personaPostInData: currentAnalysisData?.persona_post
+        });
+        alert('No LinkedIn post available. Please run an analysis first.\n\nIf you just ran an analysis, the PersonaAgent may not have generated content yet.');
+        return;
+    }
+    
+    // Check if the post is an error message
+    if (linkedinPost.includes('[Error:') || linkedinPost.startsWith('[Error')) {
+        alert('PersonaAgent Error: ' + linkedinPost + '\n\nThe AI service may be rate limited. Please try again in a few moments.');
+        return;
+    }
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(linkedinPost).then(() => {
+        // Create a modal/notification
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 119, 181, 0.95);
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+            max-width: 500px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                <div style="font-size: 18px; font-weight: 600; color: white;">LinkedIn Post Copied!</div>
+                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); text-align: center; line-height: 1.5; max-height: 200px; overflow-y: auto; padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; width: 100%;">${linkedinPost}</div>
+                <button onclick="window.open('https://www.linkedin.com/feed/', '_blank'); this.parentElement.parentElement.remove();" style="background: white; color: #0077b5; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Open LinkedIn to Post</button>
+                <button onclick="this.parentElement.parentElement.remove();" style="background: transparent; color: white; border: 1px solid white; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Close</button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (modal.parentElement) {
+                modal.remove();
+            }
+        }, 10000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy post to clipboard');
+    });
+}
+
+// Download Summary Function
+function downloadSummary() {
+    if (!currentAnalysisData || !currentAnalysisData.market_analysis || !currentAnalysisData.market_analysis.council_opinions) {
+        alert('No summary data available. Please run an analysis first.');
+        return;
+    }
+
+    const data = currentAnalysisData;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const symbol = data.asset || data.symbol || 'ANALYSIS';
+    
+    // Create formatted summary content
+    let summaryContent = `# 5 LLM COUNCIL IN-DEPTH ANALYSIS SUMMARY\n`;
+    summaryContent += `Generated: ${new Date().toLocaleString()}\n`;
+    summaryContent += `Symbol: ${symbol}\n`;
+    summaryContent += `Persona: ${data.persona_selected ? data.persona_selected.toUpperCase() : 'N/A'}\n`;
+    summaryContent += `\n${'='.repeat(80)}\n\n`;
+    
+    // Add 5 LLM Council Opinions
+    summaryContent += `## 5 LLM COUNCIL OPINIONS\n\n`;
+    const agentNames = ['🦅 Macro Hawk', '🔬 Micro Forensic', '💧 Flow Detective', '📊 Tech Interpreter', '🤔 Skeptic'];
+    
+    if (data.market_analysis.council_opinions) {
+        data.market_analysis.council_opinions.forEach((opinion, index) => {
+            summaryContent += `### ${agentNames[index]}\n`;
+            summaryContent += `${opinion}\n\n`;
+        });
+    }
+    
+    // Add Consensus Points
+    if (data.market_analysis.consensus && data.market_analysis.consensus.length > 0) {
+        summaryContent += `\n## CONSENSUS POINTS\n\n`;
+        data.market_analysis.consensus.forEach((point, index) => {
+            summaryContent += `${index + 1}. ${point}\n`;
+        });
+        summaryContent += `\n`;
+    }
+    
+    // Add AI Narrative
+    if (data.narrative && (data.narrative.styled_message || data.narrative.summary || data.narrative.moderated_output)) {
+        summaryContent += `\n## AI NARRATIVE (${data.persona_selected ? data.persona_selected.toUpperCase() : 'N/A'})\n\n`;
+        const narrativeText = data.narrative.styled_message || data.narrative.summary || data.narrative.moderated_output || 'No narrative available';
+        if (narrativeText && narrativeText.trim()) {
+            summaryContent += `${narrativeText}\n\n`;
+        }
+    }
+    
+    // Add Trade Statistics
+    if (data.trade_history) {
+        const th = data.trade_history;
+        summaryContent += `\n## TRADE STATISTICS\n\n`;
+        summaryContent += `- Total Trades: ${th.total_trades || 0}\n`;
+        summaryContent += `- Win Rate: ${th.win_rate !== undefined ? th.win_rate.toFixed(1) : '0.0'}%\n`;
+        summaryContent += `- Total P&L: $${th.total_pnl !== undefined ? th.total_pnl.toFixed(2) : '0.00'}\n`;
+        if (th.avg_pnl !== undefined) {
+            summaryContent += `- Average P&L: $${th.avg_pnl.toFixed(2)}\n`;
+        } else if (th.total_trades > 0 && th.total_pnl !== undefined) {
+            summaryContent += `- Average P&L: $${(th.total_pnl / th.total_trades).toFixed(2)}\n`;
+        }
+        if (th.last_trade) {
+            summaryContent += `- Last Trade: ${th.last_trade}\n`;
+        }
+        summaryContent += `\n`;
+    }
+    
+    // Add Behavioral Analysis
+    if (data.behavioral_analysis && data.behavioral_analysis.flags && data.behavioral_analysis.flags.length > 0) {
+        summaryContent += `\n## BEHAVIORAL FLAGS\n\n`;
+        data.behavioral_analysis.flags.forEach(flag => {
+            summaryContent += `⚠️ ${flag}\n`;
+        });
+        summaryContent += `\n`;
+    }
+    
+    // Add Market Context
+    if (data.economic_calendar && data.economic_calendar.summary) {
+        summaryContent += `\n## MARKET CONTEXT\n\n${data.economic_calendar.summary}\n\n`;
+    }
+    
+    // Add Economic Events
+    if (data.economic_calendar && data.economic_calendar.economic_events && data.economic_calendar.economic_events.length > 0) {
+        summaryContent += `\n## UPCOMING ECONOMIC EVENTS\n\n`;
+        data.economic_calendar.economic_events.forEach(event => {
+            // Handle both string and object formats
+            if (typeof event === 'string') {
+                summaryContent += `- ${event}\n`;
+            } else if (typeof event === 'object' && event !== null) {
+                const eventTitle = event.title || event.event || event.name || JSON.stringify(event);
+                summaryContent += `### ${eventTitle}\n`;
+                if (event.time || event.date) {
+                    summaryContent += `- Time: ${event.time || event.date}\n`;
+                }
+                if (event.impact) {
+                    summaryContent += `- Impact: ${event.impact}\n`;
+                }
+                if (event.description) {
+                    summaryContent += `- Description: ${event.description}\n`;
+                }
+                summaryContent += `\n`;
+            }
+        });
+    }
+    
+    // Add Recent News
+    if (data.economic_calendar && data.economic_calendar.recent_news && data.economic_calendar.recent_news.length > 0) {
+        summaryContent += `\n## RECENT NEWS\n\n`;
+        data.economic_calendar.recent_news.forEach((news, index) => {
+            if (news) {
+                // Handle both string and object formats
+                if (typeof news === 'string') {
+                    summaryContent += `${index + 1}. ${news}\n`;
+                } else if (typeof news === 'object' && news !== null) {
+                    const newsText = news.headline || news.title || news.description || news.text || JSON.stringify(news);
+                    summaryContent += `${index + 1}. ${newsText}\n`;
+                    if (news.url || news.link) {
+                        summaryContent += `   Source: ${news.url || news.link}\n`;
+                    }
+                }
+            }
+        });
+        summaryContent += `\n`;
+    }
+    
+    summaryContent += `\n${'='.repeat(80)}\n`;
+    summaryContent += `\nReport generated by TensorTrade AI Trading Analyst\n`;
+    summaryContent += `Powered by 5-Agent LLM Council\n`;
+    
+    // Create blob and download
+    const blob = new Blob([summaryContent], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TensorTrade_5LLM_Summary_${symbol}_${timestamp}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('Summary downloaded successfully');
+}
 
 const app = document.createElement('div');
 app.id = 'deriv-ai-dashboard';
@@ -117,7 +403,7 @@ logo.innerHTML = `
 const title = document.createElement('div');
 title.innerHTML = `
     <h1 style="margin: 0; font-size: 24px; font-weight: 800;">
-        <span class="gradient-text">NERAL TRADE</span>
+        <span class="gradient-text">TENSORTRADE</span>
         <span style="color: #8899aa; font-size: 14px; font-weight: 400; margin-left: 10px;">INTELLIGENT TRADING ANALYST</span>
     </h1>
 `;
@@ -250,17 +536,18 @@ assistantContent.innerHTML = `
 
 leftPanel.appendChild(createCard('ASSISTANT', assistantContent));
 
-// Analysis Setup Card
+// Analysis Setup Card (will be updated dynamically)
 const analysisSetupContent = document.createElement('div');
+analysisSetupContent.id = 'analysis-setup-content';
 analysisSetupContent.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 15px;">
         <div>
             <div style="font-size: 12px; color: #8899aa; margin-bottom: 8px;">MARKET REGIME</div>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="padding: 8px 16px; background: rgba(255, 68, 68, 0.2); border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.3);">
-                    <div style="font-size: 18px; font-weight: 700; color: #ff4444;">HIGH VOLATILITY</div>
+                <div id="market-regime-box" style="padding: 8px 16px; background: rgba(255, 68, 68, 0.2); border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.3);">
+                    <div id="market-regime-text" style="font-size: 18px; font-weight: 700; color: #ff4444;">LOADING...</div>
                 </div>
-                <div style="font-size: 12px; color: #8899aa; background: rgba(136, 153, 170, 0.1); padding: 4px 10px; border-radius: 6px;">VIX: 24.5</div>
+                <div id="vix-display" style="font-size: 12px; color: #8899aa; background: rgba(136, 153, 170, 0.1); padding: 4px 10px; border-radius: 6px;">VIX: --</div>
             </div>
         </div>
         
@@ -270,14 +557,15 @@ analysisSetupContent.innerHTML = `
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                         <span style="font-size: 12px; color: #8899aa;">Current</span>
-                        <span style="font-size: 16px; font-weight: 700; color: #ff4444;">72/100</span>
+                        <span id="risk-index-value" style="font-size: 16px; font-weight: 700; color: #ff4444;">--/100</span>
                     </div>
                     <div style="height: 8px; background: rgba(255, 68, 68, 0.1); border-radius: 4px; overflow: hidden;">
-                        <div style="width: 72%; height: 100%; background: linear-gradient(90deg, #ff4444, #ff8888); border-radius: 4px;"></div>
+                        <div id="risk-index-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff4444, #ff8888); border-radius: 4px; transition: width 0.5s ease;"></div>
                     </div>
                 </div>
             </div>
         </div>
+        <div id="risk-level-badge" style="text-align: center; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: none;"></div>
     </div>
 `;
 
@@ -304,7 +592,41 @@ marketDriversContent.innerHTML = `
     </div>
 `;
 
-centerPanel.appendChild(createCard('KEY MARKET DRIVERS', marketDriversContent));
+// Create market drivers card with download button
+const marketDriversCard = createCard('KEY MARKET DRIVERS', marketDriversContent);
+const marketDriversHeader = marketDriversCard.querySelector('h3').parentElement;
+
+// Add download button to the header
+const downloadBtn = document.createElement('button');
+downloadBtn.id = 'download-summary-btn';
+downloadBtn.style.cssText = `
+    background: linear-gradient(135deg, #44ff88, #00cc66);
+    border: none;
+    border-radius: 8px;
+    color: #0a0b12;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    opacity: 0.5;
+    pointer-events: none;
+`;
+downloadBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+    <span>DOWNLOAD SUMMARY</span>
+`;
+downloadBtn.onclick = downloadSummary;
+marketDriversHeader.appendChild(downloadBtn);
+
+centerPanel.appendChild(marketDriversCard);
 
 // Live Intelligence Row (Economic Calendar & Behavioral Analysis)
 const liveIntelligenceRow = document.createElement('div');
@@ -394,13 +716,13 @@ strategyContent.innerHTML = `
                     <div style="font-size: 14px; font-weight: 600; color: #ffffff;">AI NARRATIVE</div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button title="Share on X" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(29, 161, 242, 0.2)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
+                    <button onclick="shareToX()" title="Share on X" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(29, 161, 242, 0.2)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                         </svg>
                         <span style="font-size: 12px; color: #ffffff; font-weight: 600;">X</span>
                     </button>
-                    <button title="Share on LinkedIn" style="background: rgba(0, 119, 181, 0.2); border: 1px solid rgba(0, 119, 181, 0.4); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0, 119, 181, 0.4)';" onmouseout="this.style.background='rgba(0, 119, 181, 0.2)';">
+                    <button onclick="shareToLinkedIn()" title="Share on LinkedIn" style="background: rgba(0, 119, 181, 0.2); border: 1px solid rgba(0, 119, 181, 0.4); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0, 119, 181, 0.4)';" onmouseout="this.style.background='rgba(0, 119, 181, 0.2)';">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#0077b5">
                             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                         </svg>
@@ -516,38 +838,106 @@ footerRight.innerHTML = `
 footer.appendChild(footerLeft);
 footer.appendChild(footerRight);
 
-// Add auto-refresh indicator
-const refreshIndicator = document.createElement('div');
-refreshIndicator.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(255, 68, 68, 0.9);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 1000;
-    animation: pulse 2s infinite;
-`;
-refreshIndicator.innerHTML = `
-    <span class="status-indicator status-live"></span>
-    AUTO-REFRESH: 15s
-`;
-
 // Build app
 app.appendChild(header);
 app.appendChild(dashboardGrid);
 app.appendChild(footer);
-app.appendChild(refreshIndicator);
+
+// Function to update market metrics dynamically
+function updateMarketMetrics(metrics) {
+    console.log('Updating market metrics:', metrics);
+    
+    const regimeText = document.getElementById('market-regime-text');
+    const regimeBox = document.getElementById('market-regime-box');
+    const vixDisplay = document.getElementById('vix-display');
+    const riskIndexValue = document.getElementById('risk-index-value');
+    const riskIndexBar = document.getElementById('risk-index-bar');
+    const riskLevelBadge = document.getElementById('risk-level-badge');
+    
+    if (regimeText && metrics.market_regime) {
+        regimeText.textContent = metrics.market_regime;
+    }
+    
+    if (vixDisplay && metrics.vix !== undefined) {
+        vixDisplay.textContent = `VIX: ${metrics.vix}`;
+    }
+    
+    if (riskIndexValue && metrics.risk_index !== undefined) {
+        riskIndexValue.textContent = `${metrics.risk_index}/100`;
+        
+        // Update risk bar width with animation
+        if (riskIndexBar) {
+            riskIndexBar.style.width = `${metrics.risk_index}%`;
+        }
+    }
+    
+    // Color coding based on regime
+    if (regimeBox && metrics.regime_color) {
+        const color = metrics.regime_color;
+        regimeBox.style.background = `${color}20`;
+        regimeBox.style.borderColor = `${color}40`;
+        if (regimeText) {
+            regimeText.style.color = color;
+        }
+    }
+    
+    // Update risk level badge
+    if (riskLevelBadge && metrics.risk_level) {
+        riskLevelBadge.style.display = 'block';
+        riskLevelBadge.textContent = `RISK LEVEL: ${metrics.risk_level}`;
+        
+        // Color based on risk level
+        if (metrics.risk_index < 40) {
+            riskLevelBadge.style.background = 'rgba(68, 255, 136, 0.2)';
+            riskLevelBadge.style.border = '1px solid rgba(68, 255, 136, 0.4)';
+            riskLevelBadge.style.color = '#44ff88';
+        } else if (metrics.risk_index < 70) {
+            riskLevelBadge.style.background = 'rgba(255, 215, 0, 0.2)';
+            riskLevelBadge.style.border = '1px solid rgba(255, 215, 0, 0.4)';
+            riskLevelBadge.style.color = '#ffd700';
+        } else {
+            riskLevelBadge.style.background = 'rgba(255, 68, 68, 0.2)';
+            riskLevelBadge.style.border = '1px solid rgba(255, 68, 68, 0.4)';
+            riskLevelBadge.style.color = '#ff4444';
+        }
+    }
+}
+
+// Load initial VIX on page load (optional - can fetch from a simple endpoint)
+async function loadInitialMetrics() {
+    try {
+        // Try to fetch initial metrics without asset (can show generic market metrics)
+        const response = await fetch(`${API_BASE_URL}/health`);
+        if (response.ok) {
+            const healthData = await response.json();
+            console.log('API is healthy:', healthData);
+            
+            // Set initial loading state
+            const regimeText = document.getElementById('market-regime-text');
+            if (regimeText) {
+                regimeText.textContent = 'AWAITING ANALYSIS';
+                regimeText.style.color = '#8899aa';
+            }
+            const vixDisplay = document.getElementById('vix-display');
+            if (vixDisplay) {
+                vixDisplay.textContent = 'VIX: Run analysis';
+            }
+            const riskIndexValue = document.getElementById('risk-index-value');
+            if (riskIndexValue) {
+                riskIndexValue.textContent = '--/100';
+            }
+        }
+    } catch (error) {
+        console.log('Could not check API health (normal if server is not running)');
+    }
+}
 
 // Initialize
 document.body.style.cssText = 'margin: 0; padding: 0; background: #0a0b12;';
 document.body.appendChild(app);
+
+// Load initial metrics
+setTimeout(loadInitialMetrics, 500);
 
 // API Integration Functions
 async function runAnalysis() {
@@ -581,10 +971,31 @@ async function runAnalysis() {
         });
         
         if (!response.ok) {
+            // Handle validation errors (400) specially
+            if (response.status === 400) {
+                const errorData = await response.json();
+                const errorMsg = errorData.detail || 'Invalid asset symbol';
+                throw new Error(`❌ ${errorMsg}\n\nPlease enter a valid stock symbol (e.g., AAPL, SPY, TSLA)`);
+            }
             throw new Error(`API Error: ${response.status}`);
         }
         
         currentAnalysisData = await response.json();
+        
+        // Debug: Log the entire response to see structure
+        console.log('Full API Response:', currentAnalysisData);
+        
+        // Store persona posts for sharing
+        if (currentAnalysisData.persona_post) {
+            currentPersonaPosts = {
+                x: currentAnalysisData.persona_post.x || '',
+                linkedin: currentAnalysisData.persona_post.linkedin || ''
+            };
+            console.log('Persona posts loaded:', currentPersonaPosts);
+        } else {
+            console.warn('No persona_post found in response. Keys available:', Object.keys(currentAnalysisData));
+        }
+        
         updateDashboard(currentAnalysisData);
         
         statusEl.textContent = 'Analysis Complete ✓';
@@ -605,6 +1016,26 @@ async function runAnalysis() {
 
 function updateDashboard(data) {
     console.log('Updating dashboard with:', data);
+    
+    // Update Market Metrics (VIX, Market Regime, Risk Index)
+    if (data.market_metrics) {
+        updateMarketMetrics(data.market_metrics);
+    }
+    
+    // Enable download button
+    const downloadBtn = document.getElementById('download-summary-btn');
+    if (downloadBtn && data.market_analysis && data.market_analysis.council_opinions) {
+        downloadBtn.style.opacity = '1';
+        downloadBtn.style.pointerEvents = 'auto';
+        downloadBtn.onmouseover = function() {
+            this.style.background = 'linear-gradient(135deg, #33dd77, #00aa55)';
+            this.style.transform = 'translateY(-2px)';
+        };
+        downloadBtn.onmouseout = function() {
+            this.style.background = 'linear-gradient(135deg, #44ff88, #00cc66)';
+            this.style.transform = 'translateY(0)';
+        };
+    }
     
     // Update 5 LLM Council Opinions
     const councilDiv = document.getElementById('council-opinions');
@@ -641,13 +1072,13 @@ function updateDashboard(data) {
                     <div style="font-size: 14px; font-weight: 600; color: #ffffff;">AI NARRATIVE (${data.persona_selected.toUpperCase()})</div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button title="Share on X" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(29, 161, 242, 0.2)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
+                    <button onclick="shareToX()" title="Share on X" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(29, 161, 242, 0.2)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                         </svg>
                         <span style="font-size: 12px; color: #ffffff; font-weight: 600;">X</span>
                     </button>
-                    <button title="Share on LinkedIn" style="background: rgba(0, 119, 181, 0.2); border: 1px solid rgba(0, 119, 181, 0.4); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0, 119, 181, 0.4)';" onmouseout="this.style.background='rgba(0, 119, 181, 0.2)';">
+                    <button onclick="shareToLinkedIn()" title="Share on LinkedIn" style="background: rgba(0, 119, 181, 0.2); border: 1px solid rgba(0, 119, 181, 0.4); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0, 119, 181, 0.4)';" onmouseout="this.style.background='rgba(0, 119, 181, 0.2)';">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="#0077b5">
                             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                         </svg>
