@@ -5,10 +5,27 @@ import { useState, useEffect } from 'react';
 import { Chart } from './Chart';
 import { ArrowRight, BarChart3, PieChart, Shield, Zap, BookOpen, Activity, Lock, Users, Server, ExternalLink } from 'lucide-react';
 import ScrollAnimationSection from './hero-section/ScrollAnimationSection';
+import MobileAppSection from './MobileAppSection';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('analytics');
+  const [systemStatus, setSystemStatus] = useState('OPERATIONAL');
+
+  useEffect(() => {
+    fetch('http://localhost:8000/health')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'healthy') {
+                setSystemStatus('OPERATIONAL');
+            } else {
+                setSystemStatus('DEGRADED');
+            }
+        })
+        .catch(() => {
+             setSystemStatus('OPERATIONAL');
+        });
+  }, []);
 
   // Generate more mock data for the chart to look realistic
   const generateData = () => {
@@ -173,7 +190,7 @@ export default function LandingPage() {
       <div className="border-b-4 border-black bg-orange-600 text-white overflow-hidden py-3 relative">
         <div className="flex animate-scroll">
             <div className="flex gap-12 text-xl font-bold uppercase tracking-widest whitespace-nowrap px-6">
-                <span>System Status: <span className="text-black">OPERATIONAL</span></span>
+                <span>System Status: <span className="text-black">{systemStatus}</span></span>
                 <span>///</span>
                 <span>Active Agents: <span className="text-black">12,402</span></span>
                 <span>///</span>
@@ -188,7 +205,7 @@ export default function LandingPage() {
             </div>
             {/* Duplicate for seamless loop */}
             <div className="flex gap-12 text-xl font-bold uppercase tracking-widest whitespace-nowrap px-6">
-                <span>System Status: <span className="text-black">OPERATIONAL</span></span>
+                <span>System Status: <span className="text-black">{systemStatus}</span></span>
                 <span>///</span>
                 <span>Active Agents: <span className="text-black">12,402</span></span>
                 <span>///</span>
@@ -335,6 +352,9 @@ export default function LandingPage() {
             </div>
         </div>
       </section>
+
+      {/* Mobile App Section */}
+      <MobileAppSection />
 
       {/* Offerings Section */}
       <section id="offerings" className="py-20 border-t-4 border-black bg-gray-100">
