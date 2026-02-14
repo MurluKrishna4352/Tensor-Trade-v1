@@ -1,20 +1,13 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, SafeAreaView, Platform } from 'react-native';
-import DashboardScreen from './components/DashboardScreen';
+import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.container}>
-      <DashboardScreen />
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <NavigationContainer>
+      <StatusBar style="dark" />
+      <AppNavigator />
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? 25 : 0,
-  },
-});
