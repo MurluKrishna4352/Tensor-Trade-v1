@@ -1,55 +1,48 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
+import { createChart, ColorType } from 'lightweight-charts';
 
 interface ChartProps {
-  data?: CandlestickData[];
+  data?: any[]; // Allow flexibility for demo data
 }
 
 export const Chart: React.FC<ChartProps> = ({ data }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 250,
       layout: {
-        background: { color: '#ffffff' },
+        background: { type: ColorType.Solid, color: '#ffffff' },
         textColor: '#000000',
       },
       grid: {
-        vertLines: { color: '#e0e0e0' },
-        horzLines: { color: '#e0e0e0' },
+        vertLines: { color: '#e5e5e5' },
+        horzLines: { color: '#e5e5e5' },
       },
-      timeScale: { borderColor: '#000000' },
-      rightPriceScale: { borderColor: '#000000' },
+      width: chartContainerRef.current.clientWidth,
+      height: 300,
     });
 
-    const series = chart.addSeries(CandlestickSeries, {
+    const candlestickSeries = chart.addCandlestickSeries({
       upColor: '#ffffff',
-      downColor: '#ff0000',
+      downColor: '#ff4500', // Orange-ish red for down
       borderVisible: true,
-      borderColor: '#000000',
       wickUpColor: '#000000',
-      wickDownColor: '#ff0000',
+      wickDownColor: '#ff4500',
+      borderColor: '#000000',
     });
 
-    // Generate random initial data if none provided
-    const initialData = data || generateRandomData();
-    series.setData(initialData);
-
-    chartRef.current = chart;
-    seriesRef.current = series;
+    // Generate dummy data if none provided
+    const initialData = data || generateData();
+    candlestickSeries.setData(initialData);
 
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({ width: chartContainerRef.current.clientWidth });
-      }
+        if (chartContainerRef.current) {
+            chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+        }
     };
 
     window.addEventListener('resize', handleResize);
@@ -58,37 +51,31 @@ export const Chart: React.FC<ChartProps> = ({ data }) => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, []);
-
-  useEffect(() => {
-      if (seriesRef.current && data) {
-          seriesRef.current.setData(data);
-      }
   }, [data]);
 
-  return <div ref={chartContainerRef} style={{ width: '100%', height: '250px' }} />;
+  return <div ref={chartContainerRef} className="w-full h-[300px] border-2 border-black" />;
 };
 
-function generateRandomData(): CandlestickData[] {
-  const data: CandlestickData[] = [];
-  let price = 100;
-  const now = new Date();
-  for (let i = 0; i < 100; i++) {
-    const time = new Date(now.getTime() - (100 - i) * 86400000);
-    const open = price;
-    const close = price + (Math.random() - 0.5) * 5;
-    const high = Math.max(open, close) + Math.random() * 2;
-    const low = Math.min(open, close) - Math.random() * 2;
+function generateData() {
+    const data = [];
+    let time = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000);
+    let value = 100;
+    for (let i = 0; i < 100; i++) {
+        const open = value + (Math.random() - 0.5) * 5;
+        const high = open + Math.random() * 2;
+        const low = open - Math.random() * 2;
+        const close = (open + high + low) / 3 + (Math.random() - 0.5) * 2;
 
-    data.push({
-      time: time.toISOString().split('T')[0],
-      open: open,
-      high: high,
-      low: low,
-      close: close,
-    } as CandlestickData);
+        data.push({
+            time: time.toISOString().split('T')[0],
+            open,
+            high,
+            low,
+            close,
+        });
 
-    price = close;
-  }
-  return data;
+        value = close;
+        time.setDate(time.getDate() + 1);
+    }
+    return data;
 }

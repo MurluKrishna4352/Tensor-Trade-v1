@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import BrutalistButton from '../components/BrutalistButton';
 import BrutalistInput from '../components/BrutalistInput';
 
@@ -16,41 +16,58 @@ export default function AuthScreen({ navigation }: any) {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
+        style={{ flex: 1 }}
       >
-        <Text style={styles.title}>AUTHENTICATION</Text>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+              <View style={styles.tag}>
+                  <Text style={styles.tagText}>SECURE ACCESS</Text>
+              </View>
+              <Text style={styles.title}>IDENTIFY</Text>
+              <Text style={styles.subtitle}>ENTER CREDENTIALS TO ACCESS TERMINAL.</Text>
+          </View>
 
-        <View style={styles.form}>
-          <BrutalistInput
-            label="EMAIL"
-            placeholder="ENTER EMAIL"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <BrutalistInput
-            label="PASSWORD"
-            placeholder="ENTER PASSWORD"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.card}>
+              <View style={styles.form}>
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>EMAIL ADDRESS</Text>
+                    <BrutalistInput
+                        placeholder="USER@DOMAIN.COM"
+                        value={email}
+                        onChangeText={setEmail}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                    />
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>PASSWORD</Text>
+                    <BrutalistInput
+                        placeholder="••••••••"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+                </View>
+
+                <BrutalistButton
+                    title="ACCESS TERMINAL"
+                    onPress={handleLogin}
+                    variant="primary"
+                    style={{ marginTop: 24, shadowColor: '#FF5722' }}
+                />
+              </View>
+          </View>
 
           <BrutalistButton
-            title="ACCESS TERMINAL"
-            onPress={handleLogin}
-            variant="primary"
-            style={{ marginTop: 24 }}
-          />
-        </View>
+              title="BACK TO MAINFRAME"
+              onPress={() => navigation.goBack()}
+              variant="outline"
+              style={{ marginTop: 16 }}
+            />
 
-        <BrutalistButton
-            title="BACK"
-            onPress={() => navigation.goBack()}
-            variant="outline"
-            style={{ marginTop: 16 }}
-          />
+            <Text style={styles.footerText}>SYSTEM ID: TENSOR-NODE-01 // v2.4.1</Text>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -62,22 +79,69 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     padding: 24,
     justifyContent: 'center',
   },
+  header: {
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  tag: {
+      backgroundColor: '#FF5722',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderWidth: 2,
+      borderColor: '#000',
+      marginBottom: 16,
+  },
+  tagText: {
+      color: '#FFF',
+      fontWeight: 'bold',
+      fontSize: 12,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: '900',
     color: '#000',
-    marginBottom: 48,
+    marginBottom: 8,
     textTransform: 'uppercase',
-    textAlign: 'center',
-    borderBottomWidth: 4,
-    borderBottomColor: '#FF5722',
-    paddingBottom: 16,
+  },
+  subtitle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: '#666',
+      textAlign: 'center',
+  },
+  card: {
+      borderWidth: 4,
+      borderColor: '#000',
+      padding: 24,
+      backgroundColor: '#FFF',
+      shadowColor: '#000',
+      shadowOffset: { width: 8, height: 8 },
+      shadowOpacity: 1,
+      shadowRadius: 0,
+      elevation: 8,
+      marginBottom: 24,
   },
   form: {
     width: '100%',
+  },
+  inputGroup: {
+      marginBottom: 16,
+  },
+  label: {
+      fontSize: 12,
+      fontWeight: '900',
+      marginBottom: 8,
+      textTransform: 'uppercase',
+  },
+  footerText: {
+      textAlign: 'center',
+      marginTop: 32,
+      fontWeight: 'bold',
+      color: '#CCC',
+      fontSize: 12,
   },
 });

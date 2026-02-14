@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, StatusBar } from 'react-native';
 import BrutalistCard from '../components/BrutalistCard';
 
 export default function DashboardScreen() {
@@ -20,9 +20,13 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>DASHBOARD</Text>
+            <View>
+                <Text style={styles.headerSubtitle}>WELCOME BACK, USER</Text>
+                <Text style={styles.headerTitle}>DASHBOARD</Text>
+            </View>
           <View style={styles.statusIndicator}>
              <View style={styles.statusDot} />
              <Text style={styles.statusText}>LIVE</Text>
@@ -31,32 +35,33 @@ export default function DashboardScreen() {
 
         <View style={styles.statsGrid}>
           {portfolioStats.map((stat, index) => (
-            <BrutalistCard key={index} style={styles.statCard}>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statChange}>{stat.change}</Text>
-            </BrutalistCard>
+            <View key={index} style={styles.statCardContainer}>
+                 <View style={styles.statCard}>
+                    <Text style={styles.statLabel}>{stat.label}</Text>
+                    <Text style={styles.statValue}>{stat.value}</Text>
+                    <Text style={[styles.statChange, stat.change.includes('+') ? styles.textGreen : styles.textRed]}>{stat.change}</Text>
+                </View>
+                <View style={styles.cardShadow} />
+            </View>
           ))}
         </View>
 
         <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>HOLDINGS</Text>
+            <View style={styles.sectionLine} />
         </View>
 
-        <BrutalistCard style={{ padding: 0 }}>
+        <View style={styles.holdingsContainer}>
             {holdings.map((item, index) => (
-                <View key={index} style={[
-                    styles.holdingItem,
-                    index !== holdings.length - 1 && styles.borderBottom
-                ]}>
-                    <View style={styles.row}>
+                <View key={index} style={styles.holdingCard}>
+                    <View style={styles.holdingHeader}>
                         <View>
                             <Text style={styles.holdingSymbol}>{item.symbol}</Text>
                             <Text style={styles.holdingName}>{item.name}</Text>
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
                             <Text style={styles.holdingValue}>{item.value}</Text>
-                            <Text style={styles.holdingChange}>{item.change}</Text>
+                            <Text style={[styles.holdingChange, item.change.includes('+') ? styles.textGreen : styles.textRed]}>{item.change}</Text>
                         </View>
                     </View>
                     <View style={styles.badgeContainer}>
@@ -68,7 +73,7 @@ export default function DashboardScreen() {
                     </View>
                 </View>
             ))}
-        </BrutalistCard>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -86,85 +91,131 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
     borderBottomWidth: 4,
     borderBottomColor: '#000',
     paddingBottom: 16,
+    marginTop: 8,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: '900',
     color: '#000',
     textTransform: 'uppercase',
+  },
+  headerSubtitle: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: '#666',
+      marginBottom: 4,
   },
   statusIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
+    borderColor: '#000',
     paddingHorizontal: 8,
     paddingVertical: 4,
     gap: 6,
+    backgroundColor: '#FFF',
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    backgroundColor: '#FF5722',
+    width: 8,
+    height: 8,
+    backgroundColor: '#00FF00', // Green
+    borderWidth: 1,
+    borderColor: '#000',
   },
   statusText: {
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 10,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 32,
+  },
+  statCardContainer: {
+      width: '48%',
+      marginBottom: 16,
+      height: 100,
   },
   statCard: {
-    width: '48%',
-    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#000',
+    padding: 12,
+    backgroundColor: '#FFF',
+    zIndex: 2,
+    height: '100%',
+    justifyContent: 'space-between',
+  },
+  cardShadow: {
+      position: 'absolute',
+      top: 4,
+      left: 4,
+      width: '100%',
+      height: '100%',
+      backgroundColor: '#000',
+      zIndex: 1,
   },
   statLabel: {
     fontSize: 10,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    marginBottom: 8,
+    color: '#666',
   },
   statValue: {
     fontSize: 18,
     fontWeight: '900',
-    marginBottom: 4,
   },
   statChange: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#FF5722',
+  },
+  textGreen: {
+      color: '#008000',
+  },
+  textRed: {
+      color: '#FF0000',
   },
   sectionHeader: {
-    marginBottom: 16,
-    borderLeftWidth: 8,
-    borderLeftColor: '#FF5722',
-    paddingLeft: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '900',
     textTransform: 'uppercase',
+    marginRight: 16,
   },
-  holdingItem: {
-    padding: 16,
+  sectionLine: {
+      flex: 1,
+      height: 4,
+      backgroundColor: '#000',
   },
-  borderBottom: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#000',
+  holdingsContainer: {
+      gap: 16,
   },
-  row: {
+  holdingCard: {
+      borderWidth: 3,
+      borderColor: '#000',
+      padding: 16,
+      backgroundColor: '#FFF',
+      shadowColor: '#000',
+      shadowOffset: { width: 4, height: 4 },
+      shadowOpacity: 1,
+      shadowRadius: 0,
+      elevation: 4,
+  },
+  holdingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   holdingSymbol: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
   },
   holdingName: {
@@ -174,16 +225,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   holdingValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
   },
   holdingChange: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#FF5722',
   },
   badgeContainer: {
       alignItems: 'flex-start',
+      borderTopWidth: 2,
+      borderTopColor: '#EEE',
+      paddingTop: 8,
   },
   badge: {
       paddingHorizontal: 8,
