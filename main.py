@@ -17,6 +17,7 @@ from agents.risk_manager import RiskManagerAgent
 from agents.sentiment_agent import SentimentAnalysisAgent
 from agents.compliance_agent import ComplianceAgent
 from agents.shariah_compliance_agent import ShariahComplianceAgent
+from agents.calling_agent import CallingAgent
 
 # Import LLM Council
 from llm_council.services.debate_engine import get_council_analysis, get_council_analysis_stream
@@ -304,7 +305,8 @@ async def analyze_asset_stream(asset: str, user_id: Optional[str] = "default_use
                 ("NarratorAgent", NarratorAgent, False),
                 ("PersonaAgent", PersonaAgent, False),
                 ("ModeratorAgent", ModeratorAgent, False),
-                ("ComplianceAgent", ComplianceAgent, True)
+                ("ComplianceAgent", ComplianceAgent, True),
+                ("CallingAgent", CallingAgent, True)
             ]
 
             for agent_name, agent_cls, is_async in agent_flow:
@@ -482,7 +484,8 @@ async def analyze_asset(asset: str, user_id: Optional[str] = "default_user"):
             ("NarratorAgent", NarratorAgent, False),
             ("PersonaAgent", PersonaAgent, False),
             ("ModeratorAgent", ModeratorAgent, False),
-            ("ComplianceAgent", ComplianceAgent, True)
+            ("ComplianceAgent", ComplianceAgent, True),
+            ("CallingAgent", CallingAgent, True)
         ]
         
         for agent_name, agent_cls, is_async in agent_flow:
@@ -707,7 +710,8 @@ def root():
             "PersonaAgent": "Personality styling",
             "ModeratorAgent": "Final moderation",
             "ComplianceAgent": "Checks for regulatory flags (SEC/FINRA)",
-            "ShariahComplianceAgent": "Evaluates assets for Shariah compliance"
+            "ShariahComplianceAgent": "Evaluates assets for Shariah compliance",
+            "CallingAgent": "Executes trades and generates market calls"
         },
         "features": {
             "economic_calendar": "Automated earnings and economic event tracking",

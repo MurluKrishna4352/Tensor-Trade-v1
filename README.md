@@ -25,6 +25,7 @@
 - [Technical Stack](#-technical-stack)
 - [Installation](#-installation)
 - [Use Cases](#-use-cases)
+- [Product Requirements Document](#-product-requirements-document-prd)
 - [Roadmap](#-roadmap)
 
 ---
@@ -182,6 +183,26 @@ Instead of a single AI model (which has biases), we use **5 specialized agents**
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
+│                   SHARIAH COMPLIANCE AGENT                      │
+│                 (agents/shariah_compliance_agent.py)            │
+│  • Islamic finance screening                                     │
+│  • Haram industry detection                                      │
+│  • Riba & Gharar assessment                                     │
+│  • Compliance scoring (0-100)                                   │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        CALLING AGENT                            │
+│                     (agents/calling_agent.py)                   │
+│  • Trade execution calls                                        │
+│  • Market prediction calls                                      │
+│  • API integration for brokers                                  │
+│  • Actionable trade signals                                     │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
 │                         JSON RESPONSE                           │
 │  {                                                              │
 │    "trade_history": {...},                                     │
@@ -189,6 +210,8 @@ Instead of a single AI model (which has biases), we use **5 specialized agents**
 │    "market_analysis": {5-agent debate},                        │
 │    "behavioral_analysis": {patterns, risk score},              │
 │    "narrative": {personalized summary},                        │
+│    "shariah_compliance": {compliant, score, reason},           │
+│    "calling_result": {action, details},                        │
 │    "recommendations": [...]                                    │
 │  }                                                              │
 └─────────────────────────────────────────────────────────────────┘
@@ -528,6 +551,21 @@ Auto-selects communication style based on trader performance:
   - TRADE WITH CAUTION (Risk 40-59)
   - CONTINUE TRADING (Risk <40 + Calculated Risk)
   - PROCEED CAREFULLY (Risk <40)
+
+### 🕌 Shariah Compliance Agent
+- **Islamic Finance Screening** - Validates assets against Shariah principles
+- **Haram Industry Detection** - Blocks alcohol, tobacco, gambling, weapons
+- **Riba & Gharar Assessment** - Checks for interest and excessive uncertainty
+- **Compliance Scoring** - 0-100 score with detailed reasoning
+- **LLM-Powered Evaluation** - Uses AI for nuanced interpretations
+- **Customizable Thresholds** - Adjustable for different madhabs/schools
+
+### 📞 Calling Agent
+- **Trade Execution Calls** - Simulates or executes buy/sell orders via APIs
+- **Market Prediction Calls** - Generates BUY/SELL/HOLD signals
+- **Broker API Integration** - Connects to trading platforms (Alpaca, etc.)
+- **Actionable Signals** - Real-time trade recommendations
+- **Safety Gates** - Only executes Shariah-compliant trades
 
 ---
 
@@ -1156,7 +1194,83 @@ MIT License - See LICENSE file for details
 
 ---
 
-## 👥 Contributing
+## � Product Requirements Document (PRD)
+
+### 1. Executive Summary
+**TensorTrade** is an AI-powered multi-agent trading psychology platform that combines behavioral analysis, multi-perspective market insights, Shariah compliance, and automated trade execution. Designed for retail traders, it addresses psychological biases, information overload, and ethical trading needs, with a focus on Islamic finance for UAE markets.
+
+**Target Audience:** Retail traders, Islamic finance practitioners, fintech enthusiasts, hackathon participants.
+
+**Key Value Proposition:** "Ethical AI trading with psychological insights and Shariah compliance for smarter, halal investing."
+
+### 2. Objectives
+- **Primary:** Provide comprehensive trading analysis that mitigates psychological risks and ensures ethical compliance.
+- **Secondary:** Win UAE hackathons by demonstrating innovative AI agents, real-world applicability, and cultural relevance.
+- **Success Metrics:** 90%+ compliance accuracy, <2min response time, positive user feedback on ethical features.
+
+### 3. Features & Requirements
+
+#### Core Features
+- **Multi-Agent LLM Council:** 5 AI agents debate market analysis for balanced insights.
+- **Behavioral Analysis:** Detects 10 psychological patterns with risk scoring.
+- **Shariah Compliance:** Screens assets for Islamic finance principles (no riba, no haram industries).
+- **Calling Agent:** Executes trades or generates actionable signals post-compliance check.
+- **Economic Calendar:** Real-time market events and news integration.
+- **Persona Selection:** Adaptive communication styles based on trader profile.
+
+#### Functional Requirements
+- **FR1:** System must validate asset symbols and reject invalid ones.
+- **FR2:** LLM Council must provide consensus analysis within 120 seconds.
+- **FR3:** Behavioral agent must classify patterns with severity levels.
+- **FR4:** Shariah agent must score compliance 0-100 with reasoning.
+- **FR5:** Calling agent must execute only compliant trades.
+- **FR6:** API must handle 100+ concurrent requests.
+
+#### Non-Functional Requirements
+- **NFR1:** Response time <120s for full analysis.
+- **NFR2:** 99% uptime with error handling.
+- **NFR3:** GDPR/CCPA compliant data handling.
+- **NFR4:** Scalable to 10,000 users.
+- **NFR5:** Accessible via web UI and API.
+
+### 4. User Stories
+- **As a trader,** I want behavioral analysis so I can avoid revenge trading.
+- **As an Islamic investor,** I want Shariah screening to ensure halal portfolios.
+- **As a developer,** I want API integration for automated trading bots.
+- **As a hackathon judge,** I want innovative AI demos that solve real problems.
+
+### 5. Technical Architecture
+- **Frontend:** HTML/CSS/JS for demo UI.
+- **Backend:** FastAPI with async agents.
+- **AI Layer:** OpenRouter, Mistral, Groq LLMs.
+- **Data Layer:** yfinance for market data, PostgreSQL for persistence.
+- **Agents:** Modular classes in `/agents/` directory.
+
+### 6. Design Considerations
+- **UI/UX:** Simple web interface for asset input and results display.
+- **Security:** API key management, input sanitization.
+- **Ethics:** Bias mitigation in LLMs, transparent compliance scoring.
+- **Scalability:** Docker containerization, cloud deployment.
+
+### 7. Implementation Plan
+- **Phase 1 (MVP):** Core agents + API (2 weeks).
+- **Phase 2:** Shariah + Calling agents (1 week).
+- **Phase 3:** UI polish + testing (1 week).
+- **Phase 4:** Hackathon prep + demos (1 week).
+
+### 8. Risks & Mitigations
+- **Risk:** LLM API failures → Mitigation: Fallback to cached responses.
+- **Risk:** Shariah interpretation debates → Mitigation: Configurable thresholds.
+- **Risk:** High latency → Mitigation: Parallel agent execution.
+
+### 9. Success Criteria
+- **Technical:** All agents functional, API stable.
+- **Business:** Positive feedback from UAE judges on innovation and ethics.
+- **User:** Improved trading decisions via psychological insights.
+
+---
+
+## �👥 Contributing
 
 Contributions welcome! Please:
 1. Fork the repository
