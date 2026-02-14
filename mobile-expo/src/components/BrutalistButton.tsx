@@ -20,7 +20,7 @@ export default function BrutalistButton({
     switch (variant) {
       case 'primary': return '#FF5722'; // Orange
       case 'secondary': return '#FFFFFF'; // White
-      case 'outline': return 'transparent';
+      case 'outline': return '#FFFFFF';
       default: return '#FF5722';
     }
   };
