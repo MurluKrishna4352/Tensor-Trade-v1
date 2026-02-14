@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Chart } from './Chart';
 import { ArrowRight, BarChart3, PieChart, Shield, Zap, BookOpen, Activity, Lock, Users, Server, ExternalLink } from 'lucide-react';
+import ScrollAnimationSection from './hero-section/ScrollAnimationSection';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function LandingPage() {
                 Tensor<span className="text-orange-600">Trade</span>
               </span>
             </div>
-            
+
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center space-x-8">
               <a href="#features" className="text-sm font-bold uppercase hover:bg-black hover:text-white px-3 py-1 transition-all border border-transparent hover:border-black">Features</a>
@@ -184,6 +185,9 @@ export default function LandingPage() {
              <span>API Latency: <span className="text-black">12ms</span></span>
         </div>
       </div>
+
+      {/* Scroll Animation Section - Apple-style MVP Video */}
+      <ScrollAnimationSection />
 
       {/* Analytics & Features Grid */}
       <section id="analytics" className="py-20 bg-white">
