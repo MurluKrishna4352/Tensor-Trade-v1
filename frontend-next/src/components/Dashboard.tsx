@@ -5,9 +5,7 @@ import { Chart } from './Chart';
 import { CandlestickData } from 'lightweight-charts';
 
 // API Configuration
-const API_BASE_URL = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:8000'
-    : '';
+const API_BASE_URL = 'http://localhost:8000';
 
 const DEMO_DATA = {
     "asset": "AAPL",
@@ -104,6 +102,46 @@ export default function Dashboard() {
         }
     };
 
+    const executeDemoSimulation = async () => {
+        console.log("Running in DEMO MODE");
+        setStatusMessage('DEMO: SIMULATING ANALYSIS...');
+
+        const steps = [
+            "Fetching market data...",
+            "Running Macro Hawk...",
+            "Running Micro Forensic...",
+            "Running Flow Detective...",
+            "Running Tech Interpreter...",
+            "Running Skeptic...",
+            "Synthesizing Narrative..."
+        ];
+
+        for (const step of steps) {
+            setStatusMessage(step.toUpperCase());
+            await new Promise(r => setTimeout(r, 800));
+        }
+
+        const demoData = JSON.parse(JSON.stringify(DEMO_DATA));
+        demoData.asset = asset;
+        setAnalysisData(demoData);
+
+        // Populate opinions for display
+            if (demoData.market_analysis && demoData.market_analysis.council_opinions) {
+            const opinions = demoData.market_analysis.council_opinions.map((op: string, idx: number) => {
+                    const agentNames = ['Macro Hawk', 'Micro Forensic', 'Flow Detective', 'Tech Interpreter', 'Skeptic'];
+                    return {
+                        agentName: agentNames[idx],
+                        thesis: op.replace(/^[^\s]+\s/, ''),
+                        confidence: 'HIGH' // Mock confidence
+                    };
+            });
+            setCouncilOpinions(opinions);
+        }
+
+        setStatusMessage('ANALYSIS COMPLETE [OK]');
+        setIsAnalyzing(false);
+    };
+
     const runAnalysis = async () => {
         if (isAnalyzing) return;
         if (!asset) {
@@ -117,43 +155,7 @@ export default function Dashboard() {
         setAnalysisData(null); // Clear previous data
 
         if (isDemo) {
-            console.log("Running in DEMO MODE");
-            setStatusMessage('DEMO: SIMULATING ANALYSIS...');
-
-            const steps = [
-                "Fetching market data...",
-                "Running Macro Hawk...",
-                "Running Micro Forensic...",
-                "Running Flow Detective...",
-                "Running Tech Interpreter...",
-                "Running Skeptic...",
-                "Synthesizing Narrative..."
-            ];
-
-            for (const step of steps) {
-                setStatusMessage(step.toUpperCase());
-                await new Promise(r => setTimeout(r, 800));
-            }
-
-            const demoData = JSON.parse(JSON.stringify(DEMO_DATA));
-            demoData.asset = asset;
-            setAnalysisData(demoData);
-
-            // Populate opinions for display
-             if (demoData.market_analysis && demoData.market_analysis.council_opinions) {
-                const opinions = demoData.market_analysis.council_opinions.map((op: string, idx: number) => {
-                     const agentNames = ['Macro Hawk', 'Micro Forensic', 'Flow Detective', 'Tech Interpreter', 'Skeptic'];
-                     return {
-                         agentName: agentNames[idx],
-                         thesis: op.replace(/^[^\s]+\s/, ''),
-                         confidence: 'HIGH' // Mock confidence
-                     };
-                });
-                setCouncilOpinions(opinions);
-            }
-
-            setStatusMessage('ANALYSIS COMPLETE [OK]');
-            setIsAnalyzing(false);
+            await executeDemoSimulation();
             return;
         }
 
@@ -193,8 +195,9 @@ export default function Dashboard() {
 
         } catch (error: any) {
             console.error('Analysis failed:', error);
-            setStatusMessage('ANALYSIS FAILED');
-            alert(`Analysis failed: ${error.message}`);
+            setStatusMessage('ANALYSIS FAILED. SWITCHING TO DEMO.');
+            alert(`Backend unreachable or error: ${error.message}. Switching to Demo Mode.`);
+            await executeDemoSimulation();
         } finally {
             setIsAnalyzing(false);
         }

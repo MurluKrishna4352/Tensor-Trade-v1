@@ -10,6 +10,64 @@ interface AgentOpinion {
   supportingPoints?: string[];
 }
 
+const DEMO_DATA = {
+    "asset": "AAPL",
+    "persona_selected": "Coach",
+    "market_metrics": {
+        "vix": 18.5,
+        "market_regime": "BULLISH VOLATILE",
+        "risk_index": 65,
+        "risk_level": "ELEVATED",
+        "regime_color": "#ff0000"
+    },
+    "market_analysis": {
+        "council_opinions": [
+            "Macro Hawk (High): Fed pivot priced in, yield curve steepening favors growth.",
+            "Micro Forensic (Moderate): Margins compressing but services revenue +12% YoY.",
+            "Flow Detective (High): Massive call gamma squeeze at $180 strike.",
+            "Tech Interpreter (Moderate): Bull flag breakout on 4H chart targeting $185.",
+            "Skeptic (Low): Valuation stretched at 32x PE, watch for rug pull."
+        ],
+        "consensus": ["Bullish short-term", "High volatility expected"],
+        "disagreements": ["Valuation concerns vs Momentum", "Fed rate cut timing"],
+        "market_context": {
+            "price": 178.45,
+            "move_direction": "UP",
+            "change_pct": "2.3",
+            "volume": 85000000
+        }
+    },
+    "narrative": {
+        "styled_message": "Listen up. The market is handing you a gift with this volatility, but don't get greedy. Technicals scream breakout, but that risk index at 65 means chop is incoming. Stick to the plan or get wrecked.",
+        "persona_selected": "Coach"
+    },
+    "behavioral_analysis": {
+        "flags": [
+            { "pattern": "FOMO", "message": "Chasing breakout candles" },
+            { "pattern": "Overtrading", "message": "15 trades in 2 hours" }
+        ]
+    },
+    "trade_history": {
+        "total_trades": 42,
+        "win_rate": 58.5,
+        "total_pnl": 1250.50
+    },
+    "economic_calendar": {
+        "summary": "CPI data released lower than expected, fueling rate cut bets.",
+        "economic_events": ["CPI YoY 2.9% vs 3.1% exp", "FOMC Meeting Minutes"]
+    },
+    "persona_post": {
+        "x": "AAPL breaking out! Fed pivot incoming? Watch $185. #trading #stocks",
+        "linkedin": "Market analysis for AAPL suggests strong bullish momentum..."
+    },
+    "shariah_compliance": {
+        "compliant": true,
+        "score": 95,
+        "reason": "Core business (Technology) is Halal. Debt ratios are within acceptable limits (<30%).",
+        "issues": []
+    }
+};
+
 export default function AnalyzePage() {
   const [asset, setAsset] = useState('');
   const [userId, setUserId] = useState('user_123');
@@ -28,6 +86,47 @@ export default function AnalyzePage() {
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:8000'
     : '';
+
+  const executeDemoSimulation = async () => {
+    console.log("Running in DEMO MODE");
+    setStatusMessage('DEMO: SIMULATING ANALYSIS...');
+
+    const steps = [
+        "Fetching market data...",
+        "Running Macro Hawk...",
+        "Running Micro Forensic...",
+        "Running Flow Detective...",
+        "Running Tech Interpreter...",
+        "Running Skeptic...",
+        "Synthesizing Narrative..."
+    ];
+
+    for (const step of steps) {
+        setStatusMessage(step.toUpperCase());
+        await new Promise(r => setTimeout(r, 800));
+    }
+
+    const demoData = JSON.parse(JSON.stringify(DEMO_DATA));
+    demoData.asset = asset;
+    setAnalysisData(demoData);
+
+    // Populate opinions for display
+    if (demoData.market_analysis && demoData.market_analysis.council_opinions) {
+        const opinions = demoData.market_analysis.council_opinions.map((op: string, idx: number) => {
+                const agentNames = ['🦅 Macro Hawk', '🔬 Micro Forensic', '💧 Flow Detective', '📊 Tech Interpreter', '🤔 Skeptic'];
+                return {
+                    agentName: agentNames[idx] || 'Agent',
+                    thesis: op.replace(/^[^\s]+\s/, ''),
+                    confidence: 'HIGH',
+                    supportingPoints: []
+                };
+        });
+        setAgentOpinions(opinions);
+    }
+
+    setStatusMessage('Analysis complete');
+    setIsAnalyzing(false);
+  };
 
   const runAnalysis = async () => {
     if (!asset) {
@@ -77,8 +176,9 @@ export default function AnalyzePage() {
       setStatusMessage('Analysis complete');
     } catch (error: any) {
       console.error('Analysis failed:', error);
-      setStatusMessage('Analysis failed');
-      alert(`Analysis failed: ${error.message}`);
+      setStatusMessage('Analysis failed. Switching to Demo Mode.');
+      alert(`Analysis failed: ${error.message}. Switching to Demo Mode.`);
+      await executeDemoSimulation();
     } finally {
       setIsAnalyzing(false);
     }
