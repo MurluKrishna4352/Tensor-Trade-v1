@@ -2,66 +2,177 @@
 
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import { executeTrade, getStocks, getWallet, getWatchlist, Stock, topUpWallet, WatchlistItem } from '@/lib/api';
 
 export default function TradingPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('stocks');
   const [searchQuery, setSearchQuery] = useState('');
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTrading, setIsTrading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [currency, setCurrency] = useState('AED');
+  const [tokenSymbol, setTokenSymbol] = useState('TTK');
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Unexpected error';
 
   const goToAnalyze = (symbol: string) => {
     router.push(`/dashboard/analyze?asset=${symbol}`);
   };
 
-  const stocks = [
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 175.43, change: 2.3, volume: '54.2M', marketCap: '2.7T', shariah: true },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', price: 378.91, change: 1.8, volume: '22.1M', marketCap: '2.8T', shariah: true },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.80, change: -0.5, volume: '18.3M', marketCap: '1.8T', shariah: false },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.50, change: 3.2, volume: '95.4M', marketCap: '789B', shariah: true },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 875.28, change: 5.1, volume: '41.2M', marketCap: '2.2T', shariah: true },
-    { symbol: 'META', name: 'Meta Platforms', price: 485.20, change: 1.4, volume: '15.8M', marketCap: '1.2T', shariah: false },
-  ];
-
   const upcomingIPOs = [
     {
       company: 'TechVision AI',
       symbol: 'TVAI',
-      priceRange: '$18-$22',
+      priceRange: 'AED 66-AED 81',
       date: '2026-02-20',
       shares: '15M',
-      valuation: '$3.5B',
+      valuation: 'AED 12.85B',
       description: 'Leading AI infrastructure company'
     },
     {
       company: 'GreenPower Solutions',
       symbol: 'GRPW',
-      priceRange: '$25-$30',
+      priceRange: 'AED 92-AED 110',
       date: '2026-02-25',
       shares: '20M',
-      valuation: '$5.2B',
+      valuation: 'AED 19.08B',
       description: 'Renewable energy technology'
     },
     {
       company: 'BioMed Innovations',
       symbol: 'BIOM',
-      priceRange: '$32-$38',
+      priceRange: 'AED 117-AED 139',
       date: '2026-03-01',
       shares: '12M',
-      valuation: '$4.8B',
+      valuation: 'AED 17.62B',
       description: 'Biotech research and development'
     },
   ];
 
-  const watchlist = [
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.25, change: 2.1 },
-    { symbol: 'JPM', name: 'JPMorgan Chase', price: 189.40, change: -0.8 },
-    { symbol: 'V', name: 'Visa Inc.', price: 278.90, change: 1.5 },
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        const [stocksRes, watchlistRes, walletRes] = await Promise.all([getStocks(), getWatchlist(), getWallet()]);
+        setStocks(stocksRes.stocks);
+        setWatchlist(watchlistRes.watchlist);
+        setWalletBalance(walletRes.token_balance);
+        setCurrency(walletRes.currency);
+        setTokenSymbol(walletRes.token_symbol);
+      } catch (error: unknown) {
+        alert(`Failed to load trading data: ${getErrorMessage(error)}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const filteredStocks = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return stocks;
+    }
+    const query = searchQuery.toLowerCase();
+    return stocks.filter(
+      (stock) => stock.symbol.toLowerCase().includes(query) || stock.name.toLowerCase().includes(query)
+    );
+  }, [stocks, searchQuery]);
+
+  const filteredWatchlist = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return watchlist;
+    }
+    const query = searchQuery.toLowerCase();
+    return watchlist.filter(
+      (stock) => stock.symbol.toLowerCase().includes(query) || stock.name.toLowerCase().includes(query)
+    );
+  }, [watchlist, searchQuery]);
+
+  const handleTrade = async (symbol: string) => {
+    const actionInput = window.prompt('Enter action: BUY or SELL', 'BUY');
+    if (!actionInput) {
+      return;
+    }
+
+    const normalizedAction = actionInput.trim().toLowerCase();
+    if (normalizedAction !== 'buy' && normalizedAction !== 'sell') {
+      alert('Invalid action. Please enter BUY or SELL.');
+      return;
+    }
+
+    const quantityInput = window.prompt(`Enter quantity to ${normalizedAction.toUpperCase()} ${symbol}`, '1');
+    if (!quantityInput) {
+      return;
+    }
+
+    const quantity = Number(quantityInput);
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      alert('Quantity must be a positive whole number.');
+      return;
+    }
+
+    try {
+      setIsTrading(true);
+      const result = await executeTrade(symbol, normalizedAction as 'buy' | 'sell', quantity);
+      setWalletBalance(result.token_balance ?? result.cash_balance);
+      if (result.currency) {
+        setCurrency(result.currency);
+      }
+      if (result.token_symbol) {
+        setTokenSymbol(result.token_symbol);
+      }
+      alert(
+        `${result.trade.action.toUpperCase()} ${result.trade.quantity} ${result.trade.symbol} @ ${currency} ${result.trade.price.toFixed(2)}\nWallet balance: ${currency} ${(result.token_balance ?? result.cash_balance).toFixed(2)} (${tokenSymbol})`
+      );
+    } catch (error: unknown) {
+      alert(`Trade failed: ${getErrorMessage(error)}`);
+    } finally {
+      setIsTrading(false);
+    }
+  };
+
+  const handleTopUp = async () => {
+    const amountInput = window.prompt(`Enter ${currency} amount to add to wallet`, '10000');
+    if (!amountInput) {
+      return;
+    }
+
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert('Please enter a valid positive amount.');
+      return;
+    }
+
+    try {
+      const result = await topUpWallet(amount, 'Manual top-up from trading page');
+      setWalletBalance(result.token_balance);
+      setCurrency(result.currency);
+      setTokenSymbol(result.token_symbol);
+      alert(`Wallet topped up by ${result.currency} ${amount.toFixed(2)}. New balance: ${result.currency} ${result.token_balance.toFixed(2)}`);
+    } catch (error: unknown) {
+      alert(`Top-up failed: ${getErrorMessage(error)}`);
+    }
+  };
 
   return (
     <div className="space-y-6">
+        <Card className="p-6 border-4 border-black">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold uppercase">Virtual Wallet</h3>
+              <p className="text-sm mt-1">Balance: {currency} {walletBalance.toFixed(2)} ({tokenSymbol})</p>
+            </div>
+            <Button size="sm" onClick={handleTopUp}>TOP UP</Button>
+          </div>
+        </Card>
+
         {/* Search */}
         <div className="flex flex-col md:flex-row gap-4">
           <input
@@ -97,6 +208,7 @@ export default function TradingPage() {
         {activeTab === 'stocks' && (
           <Card className="p-6">
             <h2 className="text-xl font-bold uppercase mb-6 border-b-4 border-black pb-3">Live Market</h2>
+            {isLoading && <p className="text-sm font-bold uppercase mb-4">Loading market data...</p>}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -112,16 +224,16 @@ export default function TradingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stocks.map((stock, index) => (
+                  {filteredStocks.map((stock, index) => (
                     <tr key={index} className="border-b-2 border-black hover:bg-black hover:text-white">
                       <td className="py-4 px-4 font-bold">{stock.symbol}</td>
                       <td className="py-4 px-4">{stock.name}</td>
-                      <td className="py-4 px-4 text-right font-bold">${stock.price.toFixed(2)}</td>
+                      <td className="py-4 px-4 text-right font-bold">{currency} {stock.price.toFixed(2)}</td>
                       <td className="py-4 px-4 text-right font-bold">
                         {stock.change > 0 ? '+' : ''}{stock.change}%
                       </td>
                       <td className="py-4 px-4 text-right">{stock.volume}</td>
-                      <td className="py-4 px-4 text-right">{stock.marketCap}</td>
+                      <td className="py-4 px-4 text-right">{stock.market_cap}</td>
                       <td className="py-4 px-4 text-center">
                         <span className={`px-3 py-1 font-bold text-xs border-2 border-black ${stock.shariah ? 'bg-black text-white' : 'bg-white text-black'}`}>
                           {stock.shariah ? 'YES' : 'NO'}
@@ -130,7 +242,7 @@ export default function TradingPage() {
                       <td className="py-4 px-4 text-right">
                         <div className="flex gap-2 justify-end">
                           <Button size="sm" onClick={() => goToAnalyze(stock.symbol)}>ANALYZE</Button>
-                          <Button size="sm" variant="outline">TRADE</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleTrade(stock.symbol)} disabled={isTrading}>TRADE</Button>
                         </div>
                       </td>
                     </tr>
@@ -181,7 +293,7 @@ export default function TradingPage() {
                       <p className="text-sm">{ipo.description}</p>
                     </div>
 
-                    <Button className="w-full">INDICATE INTEREST</Button>
+                    <Button className="w-full" onClick={() => alert(`Interest recorded for ${ipo.symbol}. We will notify you before ${ipo.date}.`)}>INDICATE INTEREST</Button>
                   </div>
                 </Card>
               ))}
@@ -194,21 +306,21 @@ export default function TradingPage() {
           <Card className="p-6">
             <h2 className="text-xl font-bold uppercase mb-6 border-b-4 border-black pb-3">Your Watchlist</h2>
             <div className="space-y-4">
-              {watchlist.map((stock, index) => (
+              {filteredWatchlist.map((stock, index) => (
                 <div key={index} className="flex items-center justify-between border-4 border-black p-4">
                   <div>
                     <div className="font-bold">{stock.symbol}</div>
                     <div className="text-sm">{stock.name}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">${stock.price.toFixed(2)}</div>
+                    <div className="font-bold">{currency} {stock.price.toFixed(2)}</div>
                     <div className="text-sm font-bold">
                       {stock.change > 0 ? '+' : ''}{stock.change}%
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => goToAnalyze(stock.symbol)}>ANALYZE</Button>
-                    <Button size="sm" variant="outline">TRADE</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleTrade(stock.symbol)} disabled={isTrading}>TRADE</Button>
                   </div>
                 </div>
               ))}

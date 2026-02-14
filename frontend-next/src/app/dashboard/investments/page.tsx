@@ -2,99 +2,29 @@
 
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  CuratedPortfolio,
+  getCuratedPortfolios,
+  getShariahScreener,
+  getWallet,
+  investInPortfolio,
+  ShariahStock,
+  topUpWallet,
+} from '@/lib/api';
 
 export default function InvestmentsPage() {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [stocks, setStocks] = useState<ShariahStock[]>([]);
+  const [investmentOptions, setInvestmentOptions] = useState<CuratedPortfolio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [investingId, setInvestingId] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [currency, setCurrency] = useState('AED');
+  const [tokenSymbol, setTokenSymbol] = useState('TTK');
 
-  const shariahStocks = [
-    {
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      price: 175.43,
-      change: 2.3,
-      shariahCompliant: true,
-      debtRatio: 15,
-      halalRevenue: 100,
-      rating: 'Excellent',
-      sector: 'Technology'
-    },
-    {
-      symbol: 'MSFT',
-      name: 'Microsoft Corp.',
-      price: 378.91,
-      change: 1.8,
-      shariahCompliant: true,
-      debtRatio: 22,
-      halalRevenue: 98,
-      rating: 'Good',
-      sector: 'Technology'
-    },
-    {
-      symbol: 'TSLA',
-      name: 'Tesla Inc.',
-      price: 248.50,
-      change: 3.2,
-      shariahCompliant: true,
-      debtRatio: 8,
-      halalRevenue: 100,
-      rating: 'Excellent',
-      sector: 'Automotive'
-    },
-    {
-      symbol: 'NVDA',
-      name: 'NVIDIA Corp.',
-      price: 875.28,
-      change: 5.1,
-      shariahCompliant: true,
-      debtRatio: 12,
-      halalRevenue: 100,
-      rating: 'Excellent',
-      sector: 'Technology'
-    },
-    {
-      symbol: 'GOOGL',
-      name: 'Alphabet Inc.',
-      price: 141.80,
-      change: -0.5,
-      shariahCompliant: false,
-      debtRatio: 8,
-      halalRevenue: 85,
-      rating: 'Non-Compliant',
-      sector: 'Technology'
-    },
-  ];
-
-  const investmentOptions = [
-    {
-      name: 'Halal Growth Portfolio',
-      description: 'Diversified portfolio of high-growth Shariah-compliant stocks',
-      minInvestment: '$5,000',
-      expectedReturn: '12-18% annually',
-      riskLevel: 'Medium',
-      holdings: 25,
-      compliance: '100%'
-    },
-    {
-      name: 'Islamic Tech Fund',
-      description: 'Focus on technology companies meeting strict Shariah guidelines',
-      minInvestment: '$10,000',
-      expectedReturn: '15-22% annually',
-      riskLevel: 'Medium-High',
-      holdings: 15,
-      compliance: '100%'
-    },
-    {
-      name: 'Ethical Income Generator',
-      description: 'Dividend-focused Shariah-compliant investments',
-      minInvestment: '$3,000',
-      expectedReturn: '8-12% annually',
-      riskLevel: 'Low-Medium',
-      holdings: 30,
-      compliance: '100%'
-    },
-  ];
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Unexpected error';
 
   const shariahPrinciples = [
     {
@@ -123,9 +53,99 @@ export default function InvestmentsPage() {
     },
   ];
 
-  const filteredStocks = activeFilter === 'all' 
-    ? shariahStocks 
-    : shariahStocks.filter(stock => stock.shariahCompliant);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [portfolioRes, screenerRes] = await Promise.all([
+          getCuratedPortfolios(),
+          getShariahScreener(false),
+        ]);
+        const walletRes = await getWallet();
+        setInvestmentOptions(portfolioRes.portfolios);
+        setStocks(screenerRes.stocks);
+        setWalletBalance(walletRes.token_balance);
+        setCurrency(walletRes.currency);
+        setTokenSymbol(walletRes.token_symbol);
+      } catch (error: unknown) {
+        alert(`Failed to load investment data: ${getErrorMessage(error)}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const loadScreener = async () => {
+      try {
+        const screenerRes = await getShariahScreener(activeFilter === 'halal');
+        setStocks(screenerRes.stocks);
+      } catch (error: unknown) {
+        alert(`Failed to update screener: ${getErrorMessage(error)}`);
+      }
+    };
+
+    loadScreener();
+  }, [activeFilter]);
+
+  const handleInvest = async (option: CuratedPortfolio) => {
+    const amountInput = window.prompt(
+      `Enter amount to invest in ${option.name} (minimum ${currency} ${option.min_investment})`,
+      String(option.min_investment)
+    );
+
+    if (!amountInput) {
+      return;
+    }
+
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert('Please enter a valid positive amount.');
+      return;
+    }
+
+    try {
+      setInvestingId(option.id);
+      const result = await investInPortfolio(option.id, amount);
+      setWalletBalance(result.token_balance ?? result.cash_balance);
+      if (result.currency) {
+        setCurrency(result.currency);
+      }
+      if (result.token_symbol) {
+        setTokenSymbol(result.token_symbol);
+      }
+      alert(`Investment successful: ${currency} ${amount.toFixed(2)} in ${option.name}`);
+    } catch (error: unknown) {
+      alert(`Investment failed: ${getErrorMessage(error)}`);
+    } finally {
+      setInvestingId(null);
+    }
+  };
+
+  const handleTopUp = async () => {
+    const amountInput = window.prompt(`Enter ${currency} amount to add to wallet`, '10000');
+    if (!amountInput) {
+      return;
+    }
+
+    const amount = Number(amountInput);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert('Please enter a valid positive amount.');
+      return;
+    }
+
+    try {
+      const result = await topUpWallet(amount, 'Manual top-up from investments page');
+      setWalletBalance(result.token_balance);
+      setCurrency(result.currency);
+      setTokenSymbol(result.token_symbol);
+      alert(`Wallet topped up by ${result.currency} ${amount.toFixed(2)}`);
+    } catch (error: unknown) {
+      alert(`Top-up failed: ${getErrorMessage(error)}`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -133,6 +153,10 @@ export default function InvestmentsPage() {
         <div className="border-4 border-black p-6">
           <h2 className="text-2xl font-bold uppercase">Shariah-Compliant Investments</h2>
           <p className="text-sm mt-1">ETHICALLY INVEST ACCORDING TO ISLAMIC FINANCE PRINCIPLES</p>
+          {walletBalance !== null && <p className="text-sm font-bold mt-3">WALLET BALANCE: {currency} {walletBalance.toFixed(2)} ({tokenSymbol})</p>}
+          <div className="mt-3">
+            <Button size="sm" onClick={handleTopUp}>TOP UP WALLET</Button>
+          </div>
         </div>
 
         {/* Shariah Principles */}
@@ -151,6 +175,7 @@ export default function InvestmentsPage() {
         {/* Curated Portfolios */}
         <div>
           <h3 className="text-xl font-bold uppercase mb-4">Curated Halal Portfolios</h3>
+          {loading && <p className="text-sm font-bold uppercase mb-3">Loading portfolios...</p>}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {investmentOptions.map((option, index) => (
               <Card key={index} className="p-6">
@@ -163,19 +188,19 @@ export default function InvestmentsPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between border-b-2 border-black py-2">
                       <span className="font-bold">MIN INVESTMENT</span>
-                      <span>{option.minInvestment}</span>
+                      <span>{currency} {option.min_investment.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between border-b-2 border-black py-2">
                       <span className="font-bold">EXPECTED RETURN</span>
-                      <span className="font-bold">{option.expectedReturn}</span>
+                      <span className="font-bold">{option.expected_return}</span>
                     </div>
                     <div className="flex justify-between border-b-2 border-black py-2">
                       <span className="font-bold">RISK LEVEL</span>
-                      <span>{option.riskLevel}</span>
+                      <span>{option.risk_level}</span>
                     </div>
                     <div className="flex justify-between border-b-2 border-black py-2">
                       <span className="font-bold">HOLDINGS</span>
-                      <span>{option.holdings}</span>
+                      <span>{option.holdings.length}</span>
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="font-bold">COMPLIANCE</span>
@@ -183,7 +208,13 @@ export default function InvestmentsPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full">INVEST NOW</Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleInvest(option)}
+                    disabled={investingId === option.id}
+                  >
+                    {investingId === option.id ? 'PROCESSING...' : 'INVEST NOW'}
+                  </Button>
                 </div>
               </Card>
             ))}
@@ -229,22 +260,22 @@ export default function InvestmentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredStocks.map((stock, index) => (
+                {stocks.map((stock, index) => (
                   <tr key={index} className="border-b-2 border-black hover:bg-black hover:text-white">
                     <td className="py-4 px-4 font-bold">{stock.symbol}</td>
                     <td className="py-4 px-4">{stock.name}</td>
-                    <td className="py-4 px-4 text-right font-bold">${stock.price.toFixed(2)}</td>
+                    <td className="py-4 px-4 text-right font-bold">{currency} {stock.price.toFixed(2)}</td>
                     <td className="py-4 px-4 text-right font-bold">
                       {stock.change > 0 ? '+' : ''}{stock.change}%
                     </td>
-                    <td className="py-4 px-4 text-right">{stock.debtRatio}%</td>
-                    <td className="py-4 px-4 text-right">{stock.halalRevenue}%</td>
+                    <td className="py-4 px-4 text-right">{stock.debt_ratio}%</td>
+                    <td className="py-4 px-4 text-right">{stock.halal_revenue}%</td>
                     <td className="py-4 px-4 text-center font-bold">{stock.rating}</td>
                     <td className="py-4 px-4 text-center">
                       <span className={`px-3 py-1 font-bold text-xs border-2 border-black ${
-                        stock.shariahCompliant ? 'bg-black text-white' : 'bg-white text-black'
+                        stock.shariah_compliant ? 'bg-black text-white' : 'bg-white text-black'
                       }`}>
-                        {stock.shariahCompliant ? 'COMPLIANT' : 'NON-COMPLIANT'}
+                        {stock.shariah_compliant ? 'COMPLIANT' : 'NON-COMPLIANT'}
                       </span>
                     </td>
                   </tr>

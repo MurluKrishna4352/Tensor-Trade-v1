@@ -6,25 +6,25 @@ export default function PortfolioPage() {
   const portfolioStats = [
     {
       label: 'Total Value',
-      value: '$125,430.50',
+      value: 'AED 460,329.94',
       change: '+12.5%',
       positive: true,
     },
     {
       label: 'Today\'s Gain/Loss',
-      value: '+$2,340.20',
+      value: '+AED 8,588.53',
       change: '+1.9%',
       positive: true,
     },
     {
       label: 'Total Investments',
-      value: '$100,000.00',
+      value: 'AED 367,000.00',
       change: '15 stocks',
       positive: true,
     },
     {
       label: 'Total Return',
-      value: '+$25,430.50',
+      value: '+AED 93,329.94',
       change: '+25.4%',
       positive: true,
     }
@@ -83,9 +83,9 @@ export default function PortfolioPage() {
                     </td>
                     <td className="py-4 px-4">{holding.name}</td>
                     <td className="py-4 px-4 text-right">{holding.shares}</td>
-                    <td className="py-4 px-4 text-right">${holding.price.toFixed(2)}</td>
+                    <td className="py-4 px-4 text-right">AED {holding.price.toFixed(2)}</td>
                     <td className="py-4 px-4 text-right font-bold">
-                      ${holding.value.toFixed(2)}
+                      AED {holding.value.toFixed(2)}
                     </td>
                     <td className="py-4 px-4 text-right font-bold">
                       {holding.change > 0 ? '+' : ''}{holding.change}%
@@ -115,7 +115,7 @@ export default function PortfolioPage() {
                     </div>
                     <div>
                       <div className="font-bold">{transaction.symbol}</div>
-                      <div className="text-sm">{transaction.shares} shares @ ${transaction.price}</div>
+                      <div className="text-sm">{transaction.shares} shares @ AED {transaction.price}</div>
                     </div>
                   </div>
                   <div className="text-right">

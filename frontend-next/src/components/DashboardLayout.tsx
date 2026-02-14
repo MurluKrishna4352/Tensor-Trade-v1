@@ -36,6 +36,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Portfolio', href: '/dashboard' },
     { name: 'Analyze', href: '/dashboard/analyze' },
     { name: 'Trading', href: '/dashboard/trading' },
+    { name: 'Wallet', href: '/dashboard/wallet' },
     { name: 'Policies', href: '/dashboard/policies' },
     { name: 'Investments', href: '/dashboard/investments' },
     { name: 'Voice Agent', href: '/dashboard/voice' },

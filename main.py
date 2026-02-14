@@ -8,6 +8,7 @@ import logging
 import json
 import os
 from datetime import datetime, timedelta
+from uuid import uuid4
 
 # Import agents
 from agents.behaviour_agent import BehaviorMonitorAgent
@@ -223,10 +224,624 @@ class VoiceUpdateRequest(BaseModel):
     asset: str = "AAPL"
 
 
+class ExecuteTradeRequest(BaseModel):
+    user_id: str = "default_user"
+    symbol: str
+    action: str
+    quantity: int
+
+
+class CreatePolicyRequest(BaseModel):
+    user_id: str = "default_user"
+    name: str
+    policy_type: str
+    rules: List[str]
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    max_allocation: Optional[float] = None
+    shariah_only: bool = False
+
+
+class InvestInPortfolioRequest(BaseModel):
+    user_id: str = "default_user"
+    portfolio_id: str
+    amount: float
+
+
+class WalletTopupRequest(BaseModel):
+    user_id: str = "default_user"
+    amount: float
+    note: Optional[str] = "Manual top-up"
+
+
 # ── In-memory audio cache for Twilio TwiML playback ─────────
 _audio_cache: Dict[str, bytes] = {}
 
 calling_service = CallingAgent()
+
+CURRENCY = "AED"
+TOKEN_SYMBOL = "TTK"
+USD_TO_AED = 3.67
+
+# ── In-memory prototype trading data ─────────────────────────
+MARKET_STOCKS = [
+    {
+        "symbol": "AAPL",
+        "name": "Apple Inc.",
+        "price": 643.83,
+        "change": 2.3,
+        "sector": "Technology",
+        "shariah": True,
+        "debt_ratio": 15,
+        "halal_revenue": 100,
+        "volume": "54.2M",
+        "market_cap": "9.91T",
+        "rating": "Excellent",
+    },
+    {
+        "symbol": "MSFT",
+        "name": "Microsoft Corp.",
+        "price": 1390.6,
+        "change": 1.8,
+        "sector": "Technology",
+        "shariah": True,
+        "debt_ratio": 22,
+        "halal_revenue": 98,
+        "volume": "22.1M",
+        "market_cap": "10.28T",
+        "rating": "Good",
+    },
+    {
+        "symbol": "GOOGL",
+        "name": "Alphabet Inc.",
+        "price": 520.41,
+        "change": -0.5,
+        "sector": "Technology",
+        "shariah": False,
+        "debt_ratio": 8,
+        "halal_revenue": 85,
+        "volume": "18.3M",
+        "market_cap": "6.61T",
+        "rating": "Non-Compliant",
+    },
+    {
+        "symbol": "TSLA",
+        "name": "Tesla Inc.",
+        "price": 912.0,
+        "change": 3.2,
+        "sector": "Automotive",
+        "shariah": True,
+        "debt_ratio": 8,
+        "halal_revenue": 100,
+        "volume": "95.4M",
+        "market_cap": "2.90T",
+        "rating": "Excellent",
+    },
+    {
+        "symbol": "NVDA",
+        "name": "NVIDIA Corp.",
+        "price": 3212.28,
+        "change": 5.1,
+        "sector": "Technology",
+        "shariah": True,
+        "debt_ratio": 12,
+        "halal_revenue": 100,
+        "volume": "41.2M",
+        "market_cap": "8.07T",
+        "rating": "Excellent",
+    },
+    {
+        "symbol": "META",
+        "name": "Meta Platforms",
+        "price": 1780.68,
+        "change": 1.4,
+        "sector": "Technology",
+        "shariah": False,
+        "debt_ratio": 19,
+        "halal_revenue": 90,
+        "volume": "15.8M",
+        "market_cap": "4.40T",
+        "rating": "Non-Compliant",
+    },
+]
+
+CURATED_PORTFOLIOS = [
+    {
+        "id": "halal-growth",
+        "name": "Halal Growth Portfolio",
+        "description": "Diversified portfolio of high-growth Shariah-compliant stocks",
+        "min_investment": 18350,
+        "expected_return": "12-18% annually",
+        "risk_level": "Medium",
+        "holdings": ["AAPL", "MSFT", "TSLA", "NVDA"],
+        "compliance": "100%",
+    },
+    {
+        "id": "islamic-tech",
+        "name": "Islamic Tech Fund",
+        "description": "Focus on technology companies meeting strict Shariah guidelines",
+        "min_investment": 36700,
+        "expected_return": "15-22% annually",
+        "risk_level": "Medium-High",
+        "holdings": ["AAPL", "MSFT", "NVDA"],
+        "compliance": "100%",
+    },
+    {
+        "id": "ethical-income",
+        "name": "Ethical Income Generator",
+        "description": "Dividend-focused Shariah-compliant investments",
+        "min_investment": 11010,
+        "expected_return": "8-12% annually",
+        "risk_level": "Low-Medium",
+        "holdings": ["AAPL", "TSLA", "MSFT"],
+        "compliance": "100%",
+    },
+]
+
+_user_accounts: Dict[str, Dict[str, Any]] = {}
+
+
+def _default_policies() -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": str(uuid4()),
+            "name": "Conservative Growth",
+            "type": "Risk Management",
+            "status": "active",
+            "rules": [
+                "Max 30% allocation in any single stock",
+                "Stop loss at -5% per position",
+                "Take profit at +15% per position",
+                "Maximum portfolio volatility: 12%",
+            ],
+            "stop_loss": 5,
+            "take_profit": 15,
+            "max_allocation": 30,
+            "shariah_only": False,
+            "performance": "+8.5%",
+            "created_at": "2026-02-10",
+            "last_modified": "2026-02-10",
+        },
+        {
+            "id": str(uuid4()),
+            "name": "Shariah Compliance Only",
+            "type": "Investment Filter",
+            "status": "active",
+            "rules": [
+                "Only Shariah-compliant stocks",
+                "No alcohol, gambling, or interest-based businesses",
+                "Debt-to-equity ratio < 33%",
+                "Quarterly compliance review",
+            ],
+            "stop_loss": None,
+            "take_profit": None,
+            "max_allocation": None,
+            "shariah_only": True,
+            "performance": "+12.3%",
+            "created_at": "2026-02-08",
+            "last_modified": "2026-02-08",
+        },
+    ]
+
+
+def _get_stock(symbol: str) -> Optional[Dict[str, Any]]:
+    normalized = symbol.strip().upper()
+    return next((stock for stock in MARKET_STOCKS if stock["symbol"] == normalized), None)
+
+
+def _get_user_account(user_id: str) -> Dict[str, Any]:
+    if user_id not in _user_accounts:
+        _user_accounts[user_id] = {
+            "cash_balance": 367000.0,
+            "holdings": {},
+            "trades": [],
+            "policies": _default_policies(),
+            "watchlist": ["AAPL", "MSFT", "TSLA"],
+            "investments": [],
+            "wallet": {
+                "currency": CURRENCY,
+                "token_symbol": TOKEN_SYMBOL,
+                "token_balance": 367000.0,
+                "transactions": [
+                    {
+                        "id": str(uuid4()),
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "type": "credit",
+                        "amount": 367000.0,
+                        "description": "Initial virtual wallet funding",
+                        "reference": "wallet-init",
+                    }
+                ],
+            },
+        }
+    return _user_accounts[user_id]
+
+
+def _sync_cash_balance(account: Dict[str, Any]) -> None:
+    account["cash_balance"] = round(account["wallet"]["token_balance"], 2)
+
+
+def _record_wallet_transaction(
+    account: Dict[str, Any],
+    transaction_type: str,
+    amount: float,
+    description: str,
+    reference: str,
+) -> Dict[str, Any]:
+    transaction = {
+        "id": str(uuid4()),
+        "timestamp": datetime.utcnow().isoformat(),
+        "type": transaction_type,
+        "amount": round(amount, 2),
+        "description": description,
+        "reference": reference,
+    }
+    account["wallet"]["transactions"].insert(0, transaction)
+    return transaction
+
+
+def _build_portfolio_summary(user_id: str) -> Dict[str, Any]:
+    account = _get_user_account(user_id)
+    holdings = []
+    total_invested_cost = 0.0
+    total_market_value = 0.0
+
+    for symbol, position in account["holdings"].items():
+        stock = _get_stock(symbol)
+        if stock is None:
+            continue
+        quantity = position["quantity"]
+        average_cost = position["average_cost"]
+        current_price = stock["price"]
+        market_value = quantity * current_price
+        position_cost = quantity * average_cost
+        pnl = market_value - position_cost
+        pnl_percent = (pnl / position_cost * 100) if position_cost > 0 else 0.0
+        total_invested_cost += position_cost
+        total_market_value += market_value
+
+        holdings.append(
+            {
+                "symbol": symbol,
+                "name": stock["name"],
+                "quantity": quantity,
+                "average_cost": round(average_cost, 2),
+                "current_price": current_price,
+                "market_value": round(market_value, 2),
+                "pnl": round(pnl, 2),
+                "pnl_percent": round(pnl_percent, 2),
+                "shariah": stock["shariah"],
+                "sector": stock["sector"],
+            }
+        )
+
+    wallet_balance = account["wallet"]["token_balance"]
+    total_value = wallet_balance + total_market_value
+    total_pnl = total_market_value - total_invested_cost
+    total_pnl_percent = (total_pnl / total_invested_cost * 100) if total_invested_cost > 0 else 0.0
+
+    return {
+        "total_value": round(total_value, 2),
+        "cash_balance": round(wallet_balance, 2),
+        "wallet_balance": round(wallet_balance, 2),
+        "invested_value": round(total_market_value, 2),
+        "total_pnl": round(total_pnl, 2),
+        "total_pnl_percent": round(total_pnl_percent, 2),
+        "holdings_count": len(holdings),
+        "holdings": holdings,
+        "currency": CURRENCY,
+        "token_symbol": TOKEN_SYMBOL,
+    }
+
+
+@app.get("/api/stocks")
+def list_stocks():
+    return {"stocks": MARKET_STOCKS}
+
+
+@app.get("/api/stocks/{symbol}")
+def get_stock(symbol: str):
+    stock = _get_stock(symbol)
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"Stock '{symbol}' not found")
+    return stock
+
+
+@app.get("/api/portfolio/{user_id}")
+def get_portfolio_summary(user_id: str):
+    return _build_portfolio_summary(user_id)
+
+
+@app.get("/api/wallet/{user_id}")
+def get_wallet(user_id: str):
+    account = _get_user_account(user_id)
+    _sync_cash_balance(account)
+    wallet = account["wallet"]
+    return {
+        "user_id": user_id,
+        "currency": wallet["currency"],
+        "token_symbol": wallet["token_symbol"],
+        "token_balance": round(wallet["token_balance"], 2),
+        "cash_balance": round(account["cash_balance"], 2),
+        "transactions_count": len(wallet["transactions"]),
+    }
+
+
+@app.get("/api/wallet/transactions/{user_id}")
+def get_wallet_transactions(user_id: str):
+    account = _get_user_account(user_id)
+    wallet = account["wallet"]
+    return {"currency": wallet["currency"], "token_symbol": wallet["token_symbol"], "transactions": wallet["transactions"]}
+
+
+@app.post("/api/wallet/topup")
+def top_up_wallet(request: WalletTopupRequest):
+    if request.amount <= 0:
+        raise HTTPException(status_code=400, detail="Top-up amount must be greater than zero")
+
+    account = _get_user_account(request.user_id)
+    account["wallet"]["token_balance"] += request.amount
+    _sync_cash_balance(account)
+    transaction = _record_wallet_transaction(
+        account,
+        "credit",
+        request.amount,
+        request.note or "Manual top-up",
+        "wallet-topup",
+    )
+
+    return {
+        "success": True,
+        "transaction": transaction,
+        "token_balance": round(account["wallet"]["token_balance"], 2),
+        "cash_balance": round(account["cash_balance"], 2),
+        "currency": CURRENCY,
+        "token_symbol": TOKEN_SYMBOL,
+    }
+
+
+@app.post("/api/trade")
+def execute_trade(request: ExecuteTradeRequest):
+    action = request.action.lower().strip()
+    if action not in {"buy", "sell"}:
+        raise HTTPException(status_code=400, detail="Action must be 'buy' or 'sell'")
+    if request.quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be greater than zero")
+
+    stock = _get_stock(request.symbol)
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"Stock '{request.symbol}' not found")
+
+    account = _get_user_account(request.user_id)
+    symbol = stock["symbol"]
+    price = stock["price"]
+    total = round(price * request.quantity, 2)
+    position = account["holdings"].get(symbol, {"quantity": 0, "average_cost": 0.0})
+    realized_pnl = 0.0
+
+    if action == "buy":
+        if account["wallet"]["token_balance"] < total:
+            raise HTTPException(status_code=400, detail="Insufficient cash balance")
+
+        new_quantity = position["quantity"] + request.quantity
+        new_cost = (position["quantity"] * position["average_cost"]) + total
+        position["quantity"] = new_quantity
+        position["average_cost"] = new_cost / new_quantity
+        account["holdings"][symbol] = position
+        account["wallet"]["token_balance"] -= total
+        _record_wallet_transaction(
+            account,
+            "debit",
+            total,
+            f"BUY {request.quantity} {symbol}",
+            "trade-buy",
+        )
+    else:
+        if position["quantity"] < request.quantity:
+            raise HTTPException(status_code=400, detail=f"Not enough {symbol} shares to sell")
+
+        realized_pnl = (price - position["average_cost"]) * request.quantity
+        remaining_quantity = position["quantity"] - request.quantity
+        account["wallet"]["token_balance"] += total
+        _record_wallet_transaction(
+            account,
+            "credit",
+            total,
+            f"SELL {request.quantity} {symbol}",
+            "trade-sell",
+        )
+
+        if remaining_quantity == 0:
+            account["holdings"].pop(symbol, None)
+        else:
+            position["quantity"] = remaining_quantity
+            account["holdings"][symbol] = position
+
+    trade_record = {
+        "id": str(uuid4()),
+        "user_id": request.user_id,
+        "symbol": symbol,
+        "action": action,
+        "quantity": request.quantity,
+        "price": price,
+        "total": total,
+        "timestamp": datetime.utcnow().isoformat(),
+        "realized_pnl": round(realized_pnl, 2),
+    }
+    account["trades"].insert(0, trade_record)
+    _sync_cash_balance(account)
+
+    return {
+        "success": True,
+        "trade": trade_record,
+        "cash_balance": round(account["cash_balance"], 2),
+        "token_balance": round(account["wallet"]["token_balance"], 2),
+        "currency": CURRENCY,
+        "token_symbol": TOKEN_SYMBOL,
+    }
+
+
+@app.get("/api/trades/{user_id}")
+def get_trades(user_id: str):
+    account = _get_user_account(user_id)
+    return {"trades": account["trades"]}
+
+
+@app.get("/api/policies/{user_id}")
+def get_policies(user_id: str):
+    account = _get_user_account(user_id)
+    return {"policies": account["policies"]}
+
+
+@app.post("/api/policies")
+def create_policy(request: CreatePolicyRequest):
+    account = _get_user_account(request.user_id)
+    now = datetime.utcnow().date().isoformat()
+    policy = {
+        "id": str(uuid4()),
+        "name": request.name,
+        "type": request.policy_type,
+        "status": "active",
+        "rules": request.rules,
+        "stop_loss": request.stop_loss,
+        "take_profit": request.take_profit,
+        "max_allocation": request.max_allocation,
+        "shariah_only": request.shariah_only,
+        "performance": "N/A",
+        "created_at": now,
+        "last_modified": now,
+    }
+    account["policies"].insert(0, policy)
+    return {"policy": policy}
+
+
+@app.delete("/api/policies/{user_id}/{policy_id}")
+def remove_policy(user_id: str, policy_id: str):
+    account = _get_user_account(user_id)
+    before_count = len(account["policies"])
+    account["policies"] = [policy for policy in account["policies"] if policy["id"] != policy_id]
+    if len(account["policies"]) == before_count:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    return {"success": True, "message": "Policy deleted"}
+
+
+@app.post("/api/policies/{user_id}/{policy_id}/toggle")
+def toggle_policy_status(user_id: str, policy_id: str):
+    account = _get_user_account(user_id)
+    for policy in account["policies"]:
+        if policy["id"] == policy_id:
+            policy["status"] = "inactive" if policy["status"] == "active" else "active"
+            policy["last_modified"] = datetime.utcnow().date().isoformat()
+            return {"policy": policy}
+    raise HTTPException(status_code=404, detail="Policy not found")
+
+
+@app.get("/api/watchlist/{user_id}")
+def get_watchlist(user_id: str):
+    account = _get_user_account(user_id)
+    watchlist_items = []
+    for symbol in account["watchlist"]:
+        stock = _get_stock(symbol)
+        if stock is None:
+            continue
+        watchlist_items.append(
+            {
+                "symbol": stock["symbol"],
+                "name": stock["name"],
+                "price": stock["price"],
+                "change": stock["change"],
+                "shariah": stock["shariah"],
+            }
+        )
+    return {"watchlist": watchlist_items}
+
+
+@app.post("/api/watchlist/{user_id}/{symbol}")
+def add_watchlist_item(user_id: str, symbol: str):
+    account = _get_user_account(user_id)
+    stock = _get_stock(symbol)
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"Stock '{symbol}' not found")
+    normalized = stock["symbol"]
+    if normalized not in account["watchlist"]:
+        account["watchlist"].append(normalized)
+    return {"success": True, "watchlist": account["watchlist"]}
+
+
+@app.delete("/api/watchlist/{user_id}/{symbol}")
+def remove_watchlist_item(user_id: str, symbol: str):
+    account = _get_user_account(user_id)
+    normalized = symbol.strip().upper()
+    account["watchlist"] = [item for item in account["watchlist"] if item != normalized]
+    return {"success": True, "watchlist": account["watchlist"]}
+
+
+@app.get("/api/investments/screener")
+def get_investments_screener(halal_only: bool = False):
+    stocks = MARKET_STOCKS
+    if halal_only:
+        stocks = [stock for stock in stocks if stock["shariah"]]
+
+    return {
+        "stocks": [
+            {
+                **stock,
+                "shariah_compliant": stock["shariah"],
+            }
+            for stock in stocks
+        ]
+    }
+
+
+@app.get("/api/investments/portfolios")
+def get_investment_portfolios():
+    return {"portfolios": CURATED_PORTFOLIOS}
+
+
+@app.post("/api/investments/invest")
+def invest_in_portfolio(request: InvestInPortfolioRequest):
+    account = _get_user_account(request.user_id)
+    portfolio = next((item for item in CURATED_PORTFOLIOS if item["id"] == request.portfolio_id), None)
+    if portfolio is None:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    if request.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be greater than zero")
+    if request.amount < portfolio["min_investment"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Minimum amount for this portfolio is {portfolio['min_investment']} {CURRENCY}",
+        )
+    if account["wallet"]["token_balance"] < request.amount:
+        raise HTTPException(status_code=400, detail="Insufficient cash balance")
+
+    account["wallet"]["token_balance"] -= request.amount
+    _record_wallet_transaction(
+        account,
+        "debit",
+        request.amount,
+        f"INVEST {portfolio['name']}",
+        "portfolio-invest",
+    )
+    investment_order = {
+        "id": str(uuid4()),
+        "user_id": request.user_id,
+        "portfolio_id": portfolio["id"],
+        "portfolio_name": portfolio["name"],
+        "amount": round(request.amount, 2),
+        "timestamp": datetime.utcnow().isoformat(),
+        "status": "executed",
+    }
+    account["investments"].insert(0, investment_order)
+    _sync_cash_balance(account)
+
+    return {
+        "success": True,
+        "order": investment_order,
+        "cash_balance": round(account["cash_balance"], 2),
+        "token_balance": round(account["wallet"]["token_balance"], 2),
+        "currency": CURRENCY,
+        "token_symbol": TOKEN_SYMBOL,
+    }
 
 
 @app.get("/analyze-asset-stream")

@@ -26,8 +26,8 @@ const DEMO_DATA = {
         "council_opinions": [
             "Macro Hawk (High): Fed pivot priced in, yield curve steepening favors growth.",
             "Micro Forensic (Moderate): Margins compressing but services revenue +12% YoY.",
-            "Flow Detective (High): Massive call gamma squeeze at $180 strike.",
-            "Tech Interpreter (Moderate): Bull flag breakout on 4H chart targeting $185.",
+            "Flow Detective (High): Massive call gamma squeeze at AED 661 strike.",
+            "Tech Interpreter (Moderate): Bull flag breakout on 4H chart targeting AED 679.",
             "Skeptic (Low): Valuation stretched at 32x PE, watch for rug pull."
         ],
         "consensus": ["Bullish short-term", "High volatility expected"],
@@ -59,7 +59,7 @@ const DEMO_DATA = {
         "economic_events": ["CPI YoY 2.9% vs 3.1% exp", "FOMC Meeting Minutes"]
     },
     "persona_post": {
-        "x": "AAPL breaking out! Fed pivot incoming? Watch $185. #trading #stocks",
+        "x": "AAPL breaking out! Fed pivot incoming? Watch AED 679. #trading #stocks",
         "linkedin": "Market analysis for AAPL suggests strong bullish momentum..."
     },
     "shariah_compliance": {
@@ -385,7 +385,7 @@ export default function AnalyzePage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <p className="text-sm text-gray-600 dark:text-gray-400">Current Price</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                ${analysisData.market_analysis?.market_context?.price?.toFixed(2) || '--'}
+                AED {analysisData.market_analysis?.market_context?.price?.toFixed(2) || '--'}
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">

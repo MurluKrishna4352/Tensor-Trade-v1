@@ -2,73 +2,144 @@
 
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPolicy, deletePolicy, getPolicies, Policy, togglePolicy } from '@/lib/api';
 
 export default function PoliciesPage() {
-  const policies = [
-    {
-      id: 1,
-      name: 'Conservative Growth',
-      type: 'Risk Management',
-      status: 'active',
-      rules: [
-        'Max 30% allocation in any single stock',
-        'Stop loss at -5% per position',
-        'Take profit at +15% per position',
-        'Maximum portfolio volatility: 12%'
-      ],
-      performance: '+8.5%',
-      lastModified: '2026-02-10'
-    },
-    {
-      id: 2,
-      name: 'Shariah Compliance Only',
-      type: 'Investment Filter',
-      status: 'active',
-      rules: [
-        'Only Shariah-compliant stocks',
-        'No alcohol, gambling, or interest-based businesses',
-        'Debt-to-equity ratio < 33%',
-        'Quarterly compliance review'
-      ],
-      performance: '+12.3%',
-      lastModified: '2026-02-08'
-    },
-    {
-      id: 3,
-      name: 'Tech Sector Focus',
-      type: 'Sector Allocation',
-      status: 'inactive',
-      rules: [
-        'Minimum 60% in technology sector',
-        'Diversify across AI, cloud, and semiconductors',
-        'Rebalance monthly',
-        'Monitor P/E ratios weekly'
-      ],
-      performance: '+18.7%',
-      lastModified: '2026-01-25'
-    },
-  ];
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingPolicyId, setUpdatingPolicyId] = useState<string | null>(null);
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Unexpected error';
 
   const aiRecommendations = [
     {
       title: 'Increase Diversification',
       description: 'Your portfolio concentration in tech stocks is above the optimal threshold.',
       impact: 'MEDIUM RISK',
-      action: 'Reduce tech allocation by 10%'
+      action: 'Reduce tech allocation by 10%',
+      policyType: 'Risk Management',
     },
     {
       title: 'Rebalance Alert',
       description: 'NVDA has grown to 25% of portfolio, exceeding your 20% limit.',
       impact: 'HIGH RISK',
-      action: 'Sell 5% to maintain compliance'
+      action: 'Sell 5% to maintain compliance',
+      policyType: 'Rebalancing',
     },
     {
       title: 'New Opportunity',
       description: 'Healthcare sector showing strong fundamentals and Shariah compliance.',
       impact: 'GROWTH POTENTIAL',
-      action: 'Consider 10% allocation'
+      action: 'Consider 10% allocation',
+      policyType: 'Allocation',
     },
   ];
+
+  const loadPolicies = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getPolicies();
+      setPolicies(response.policies);
+    } catch (error: unknown) {
+      alert(`Failed to load policies: ${getErrorMessage(error)}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPolicies();
+  }, [loadPolicies]);
+
+  const complianceStats = useMemo(() => {
+    const compliant = policies.filter((policy) => policy.status === 'active').length;
+    const needsAttention = policies.length - compliant;
+    const score = policies.length === 0 ? 100 : Math.round((compliant / policies.length) * 100);
+    return { compliant, needsAttention, score };
+  }, [policies]);
+
+  const handleCreatePolicy = async () => {
+    const name = window.prompt('Policy name', 'Custom Risk Policy');
+    if (!name) {
+      return;
+    }
+
+    const policyType = window.prompt('Policy type', 'Risk Management');
+    if (!policyType) {
+      return;
+    }
+
+    const rulesInput = window.prompt('Rules (comma-separated)', 'Max allocation 20%, Stop loss 7%');
+    if (!rulesInput) {
+      return;
+    }
+
+    const rules = rulesInput
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (rules.length === 0) {
+      alert('Please provide at least one rule.');
+      return;
+    }
+
+    try {
+      await createPolicy({
+        name: name.trim(),
+        policy_type: policyType.trim(),
+        rules,
+      });
+      await loadPolicies();
+      alert('Policy created successfully.');
+    } catch (error: unknown) {
+      alert(`Failed to create policy: ${getErrorMessage(error)}`);
+    }
+  };
+
+  const handleApplyRecommendation = async (rec: (typeof aiRecommendations)[number]) => {
+    try {
+      await createPolicy({
+        name: rec.title,
+        policy_type: rec.policyType,
+        rules: [rec.description, `Action: ${rec.action}`],
+      });
+      await loadPolicies();
+      alert(`Applied recommendation: ${rec.title}`);
+    } catch (error: unknown) {
+      alert(`Failed to apply recommendation: ${getErrorMessage(error)}`);
+    }
+  };
+
+  const handleTogglePolicy = async (policyId: string) => {
+    try {
+      setUpdatingPolicyId(policyId);
+      await togglePolicy(policyId);
+      await loadPolicies();
+    } catch (error: unknown) {
+      alert(`Failed to update policy: ${getErrorMessage(error)}`);
+    } finally {
+      setUpdatingPolicyId(null);
+    }
+  };
+
+  const handleDeletePolicy = async (policyId: string) => {
+    if (!window.confirm('Delete this policy?')) {
+      return;
+    }
+
+    try {
+      setUpdatingPolicyId(policyId);
+      await deletePolicy(policyId);
+      await loadPolicies();
+    } catch (error: unknown) {
+      alert(`Failed to delete policy: ${getErrorMessage(error)}`);
+    } finally {
+      setUpdatingPolicyId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -78,7 +149,7 @@ export default function PoliciesPage() {
             <h2 className="text-2xl font-bold uppercase">Portfolio Policies</h2>
             <p className="text-sm mt-1">MANAGE YOUR TRADING RULES AND COMPLIANCE</p>
           </div>
-          <Button>NEW POLICY</Button>
+          <Button onClick={handleCreatePolicy}>NEW POLICY</Button>
         </div>
 
         {/* AI Recommendations */}
@@ -100,7 +171,7 @@ export default function PoliciesPage() {
                 <div className="border-t-2 border-black pt-3 mt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold">ACTION: {rec.action}</span>
-                    <Button size="sm">APPLY</Button>
+                    <Button size="sm" onClick={() => handleApplyRecommendation(rec)}>APPLY</Button>
                   </div>
                 </div>
               </div>
@@ -111,6 +182,7 @@ export default function PoliciesPage() {
         {/* Active Policies */}
         <div>
           <h3 className="text-xl font-bold uppercase mb-4">Active Policies</h3>
+          {loading && <p className="text-sm font-bold uppercase mb-3">Loading policies...</p>}
           <div className="space-y-4">
             {policies.map((policy) => (
               <Card key={policy.id} className="p-6">
@@ -140,10 +212,24 @@ export default function PoliciesPage() {
                 </div>
 
                 <div className="border-t-4 border-black pt-4 mt-4 flex items-center justify-between">
-                  <span className="text-xs font-bold">LAST MODIFIED: {policy.lastModified}</span>
+                  <span className="text-xs font-bold">LAST MODIFIED: {policy.last_modified}</span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline">EDIT</Button>
-                    <Button size="sm" variant="outline">DELETE</Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleTogglePolicy(policy.id)}
+                      disabled={updatingPolicyId === policy.id}
+                    >
+                      {policy.status === 'active' ? 'DEACTIVATE' : 'ACTIVATE'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDeletePolicy(policy.id)}
+                      disabled={updatingPolicyId === policy.id}
+                    >
+                      DELETE
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -156,15 +242,15 @@ export default function PoliciesPage() {
           <h3 className="text-xl font-bold uppercase mb-6 border-b-4 border-black pb-3">Compliance Status</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border-4 border-black p-4">
-              <div className="text-3xl font-bold">12</div>
+              <div className="text-3xl font-bold">{complianceStats.compliant}</div>
               <div className="text-sm font-bold uppercase mt-1">Compliant</div>
             </div>
             <div className="border-4 border-black p-4">
-              <div className="text-3xl font-bold">1</div>
+              <div className="text-3xl font-bold">{complianceStats.needsAttention}</div>
               <div className="text-sm font-bold uppercase mt-1">Needs Attention</div>
             </div>
             <div className="border-4 border-black p-4">
-              <div className="text-3xl font-bold">100%</div>
+              <div className="text-3xl font-bold">{complianceStats.score}%</div>
               <div className="text-sm font-bold uppercase mt-1">Overall Score</div>
             </div>
           </div>

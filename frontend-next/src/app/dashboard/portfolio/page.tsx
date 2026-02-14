@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { TrendingUpIcon, TrendingDownIcon, PlusIcon, RefreshCwIcon } from 'lucide-react';
+import { useState } from 'react';
+import { PlusIcon, RefreshCwIcon } from 'lucide-react';
 
 interface Asset {
   symbol: string;
@@ -15,77 +15,50 @@ interface Asset {
   sector: string;
 }
 
+const INITIAL_ASSETS: Asset[] = [
+  {
+    symbol: 'AAPL',
+    name: 'Apple Inc.',
+    quantity: 10,
+    avgCost: 175.5,
+    currentPrice: 178.45,
+    pnl: 29.5,
+    pnlPercent: 1.68,
+    shariahScore: 95,
+    sector: 'Technology',
+  },
+  {
+    symbol: 'MSFT',
+    name: 'Microsoft Corporation',
+    quantity: 5,
+    avgCost: 380,
+    currentPrice: 395.2,
+    pnl: 76,
+    pnlPercent: 4,
+    shariahScore: 92,
+    sector: 'Technology',
+  },
+  {
+    symbol: 'GOOGL',
+    name: 'Alphabet Inc.',
+    quantity: 8,
+    avgCost: 140,
+    currentPrice: 138.5,
+    pnl: -12,
+    pnlPercent: -1.07,
+    shariahScore: 88,
+    sector: 'Technology',
+  },
+];
+
 export default function PortfolioPage() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
   const [showAddAsset, setShowAddAsset] = useState(false);
-
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  const fetchPortfolio = async () => {
-    try {
-      // Mock data - replace with actual API call
-      const mockAssets: Asset[] = [
-        {
-          symbol: 'AAPL',
-          name: 'Apple Inc.',
-          quantity: 10,
-          avgCost: 175.50,
-          currentPrice: 178.45,
-          pnl: 29.50,
-          pnlPercent: 1.68,
-          shariahScore: 95,
-          sector: 'Technology',
-        },
-        {
-          symbol: 'MSFT',
-          name: 'Microsoft Corporation',
-          quantity: 5,
-          avgCost: 380.00,
-          currentPrice: 395.20,
-          pnl: 76.00,
-          pnlPercent: 4.00,
-          shariahScore: 92,
-          sector: 'Technology',
-        },
-        {
-          symbol: 'GOOGL',
-          name: 'Alphabet Inc.',
-          quantity: 8,
-          avgCost: 140.00,
-          currentPrice: 138.50,
-          pnl: -12.00,
-          pnlPercent: -1.07,
-          shariahScore: 88,
-          sector: 'Technology',
-        },
-      ];
-
-      setAssets(mockAssets);
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to fetch portfolio:', error);
-      setLoading(false);
-    }
-  };
 
   const totalValue = assets.reduce((sum, asset) => sum + (asset.currentPrice * asset.quantity), 0);
   const totalPnL = assets.reduce((sum, asset) => sum + asset.pnl, 0);
   const totalPnLPercent = (totalPnL / (totalValue - totalPnL)) * 100;
   const avgShariahScore = assets.reduce((sum, asset) => sum + asset.shariahScore, 0) / assets.length;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading portfolio...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -99,7 +72,7 @@ export default function PortfolioPage() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={fetchPortfolio}
+            onClick={() => setAssets([...INITIAL_ASSETS])}
             className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
           >
             <RefreshCwIcon className="w-4 h-4" />
@@ -120,14 +93,14 @@ export default function PortfolioPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <p className="text-sm text-gray-600 dark:text-gray-400">Total Value</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-            ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            AED {totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <p className="text-sm text-gray-600 dark:text-gray-400">Total P&L</p>
           <p className={`text-2xl font-bold mt-1 ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {totalPnL >= 0 ? '+' : ''}AED {totalPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <p className={`text-sm mt-1 ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {totalPnL >= 0 ? '+' : ''}{totalPnLPercent.toFixed(2)}%
@@ -203,17 +176,17 @@ export default function PortfolioPage() {
                     {asset.quantity}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    ${asset.avgCost.toFixed(2)}
+                    AED {asset.avgCost.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    ${asset.currentPrice.toFixed(2)}
+                    AED {asset.currentPrice.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    ${(asset.currentPrice * asset.quantity).toFixed(2)}
+                    AED {(asset.currentPrice * asset.quantity).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className={`text-sm font-medium ${asset.pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {asset.pnl >= 0 ? '+' : ''}${asset.pnl.toFixed(2)}
+                      {asset.pnl >= 0 ? '+' : ''}AED {asset.pnl.toFixed(2)}
                     </div>
                     <div className={`text-xs ${asset.pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {asset.pnl >= 0 ? '+' : ''}{asset.pnlPercent.toFixed(2)}%
