@@ -17,15 +17,15 @@ const DEMO_DATA = {
         "market_regime": "BULLISH VOLATILE",
         "risk_index": 65,
         "risk_level": "ELEVATED",
-        "regime_color": "#ffbb44"
+        "regime_color": "#ff0000"
     },
     "market_analysis": {
         "council_opinions": [
-            "🦅 Macro Hawk (High): Fed pivot priced in, yield curve steepening favors growth.",
-            "🔬 Micro Forensic (Moderate): Margins compressing but services revenue +12% YoY.",
-            "💧 Flow Detective (High): Massive call gamma squeeze at $180 strike.",
-            "📊 Tech Interpreter (Moderate): Bull flag breakout on 4H chart targeting $185.",
-            "🤔 Skeptic (Low): Valuation stretched at 32x PE, watch for rug pull."
+            "Macro Hawk (High): Fed pivot priced in, yield curve steepening favors growth.",
+            "Micro Forensic (Moderate): Margins compressing but services revenue +12% YoY.",
+            "Flow Detective (High): Massive call gamma squeeze at $180 strike.",
+            "Tech Interpreter (Moderate): Bull flag breakout on 4H chart targeting $185.",
+            "Skeptic (Low): Valuation stretched at 32x PE, watch for rug pull."
         ],
         "consensus": ["Bullish short-term", "High volatility expected"],
         "market_context": {
@@ -55,76 +55,33 @@ const DEMO_DATA = {
         "economic_events": ["CPI YoY 2.9% vs 3.1% exp", "FOMC Meeting Minutes"]
     },
     "persona_post": {
-        "x": "AAPL breaking out! 🚀 Fed pivot incoming? Watch $185. #trading #stocks",
+        "x": "AAPL breaking out! Fed pivot incoming? Watch $185. #trading #stocks",
         "linkedin": "Market analysis for AAPL suggests strong bullish momentum..."
     }
 };
 
 // Share to X Function
 function shareToX() {
-    // Try to get the post from multiple sources
     let xPost = currentPersonaPosts.x;
     
-    // Fallback: check if analysis data has persona_post
     if (!xPost && currentAnalysisData && currentAnalysisData.persona_post && currentAnalysisData.persona_post.x) {
         xPost = currentAnalysisData.persona_post.x;
-        currentPersonaPosts.x = xPost; // Update the cache
+        currentPersonaPosts.x = xPost;
     }
     
     if (!xPost) {
-        console.error('No X post found. Current state:', {
-            currentPersonaPosts,
-            hasAnalysisData: !!currentAnalysisData,
-            personaPostInData: currentAnalysisData?.persona_post
-        });
-        alert('No X post available. Please run an analysis first.\n\nIf you just ran an analysis, the PersonaAgent may not have generated content yet.');
+        alert('No X post available. Please run an analysis first.');
         return;
     }
     
-    // Check if the post is an error message
     if (xPost.includes('[Error:') || xPost.startsWith('[Error')) {
-        alert('PersonaAgent Error: ' + xPost + '\n\nThe AI service may be rate limited. Please try again in a few moments.');
+        alert('PersonaAgent Error: ' + xPost);
         return;
     }
     
-    // Copy to clipboard
     navigator.clipboard.writeText(xPost).then(() => {
-        // Create a modal/notification
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(29, 161, 242, 0.95);
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-            max-width: 500px;
-        `;
-        
-        modal.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-                <div style="font-size: 18px; font-weight: 600; color: white;">X Post Copied!</div>
-                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); text-align: center; line-height: 1.5; max-height: 200px; overflow-y: auto; padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; width: 100%;">${xPost}</div>
-                <button onclick="window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent('${xPost.replace(/'/g, "\\'").replace(/\n/g, ' ')}'), '_blank'); this.parentElement.parentElement.remove();" style="background: white; color: #1DA1F2; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Open X to Post</button>
-                <button onclick="this.parentElement.parentElement.remove();" style="background: transparent; color: white; border: 1px solid white; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Close</button>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-            if (modal.parentElement) {
-                modal.remove();
-            }
-        }, 10000);
+        alert('X Post Copied to Clipboard!');
+        window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(xPost.replace(/'/g, "\\'").replace(/\n/g, ' ')), '_blank');
     }).catch(err => {
         console.error('Failed to copy:', err);
         alert('Failed to copy post to clipboard');
@@ -133,69 +90,26 @@ function shareToX() {
 
 // Share to LinkedIn Function
 function shareToLinkedIn() {
-    // Try to get the post from multiple sources
     let linkedinPost = currentPersonaPosts.linkedin;
     
-    // Fallback: check if analysis data has persona_post
     if (!linkedinPost && currentAnalysisData && currentAnalysisData.persona_post && currentAnalysisData.persona_post.linkedin) {
         linkedinPost = currentAnalysisData.persona_post.linkedin;
-        currentPersonaPosts.linkedin = linkedinPost; // Update the cache
+        currentPersonaPosts.linkedin = linkedinPost;
     }
     
     if (!linkedinPost) {
-        console.error('No LinkedIn post found. Current state:', {
-            currentPersonaPosts,
-            hasAnalysisData: !!currentAnalysisData,
-            personaPostInData: currentAnalysisData?.persona_post
-        });
-        alert('No LinkedIn post available. Please run an analysis first.\n\nIf you just ran an analysis, the PersonaAgent may not have generated content yet.');
+        alert('No LinkedIn post available. Please run an analysis first.');
         return;
     }
     
-    // Check if the post is an error message
     if (linkedinPost.includes('[Error:') || linkedinPost.startsWith('[Error')) {
-        alert('PersonaAgent Error: ' + linkedinPost + '\n\nThe AI service may be rate limited. Please try again in a few moments.');
+        alert('PersonaAgent Error: ' + linkedinPost);
         return;
     }
     
-    // Copy to clipboard
     navigator.clipboard.writeText(linkedinPost).then(() => {
-        // Create a modal/notification
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 119, 181, 0.95);
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-            max-width: 500px;
-        `;
-        
-        modal.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                </svg>
-                <div style="font-size: 18px; font-weight: 600; color: white;">LinkedIn Post Copied!</div>
-                <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); text-align: center; line-height: 1.5; max-height: 200px; overflow-y: auto; padding: 15px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; width: 100%;">${linkedinPost}</div>
-                <button onclick="window.open('https://www.linkedin.com/feed/', '_blank'); this.parentElement.parentElement.remove();" style="background: white; color: #0077b5; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Open LinkedIn to Post</button>
-                <button onclick="this.parentElement.parentElement.remove();" style="background: transparent; color: white; border: 1px solid white; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Close</button>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-            if (modal.parentElement) {
-                modal.remove();
-            }
-        }, 10000);
+        alert('LinkedIn Post Copied to Clipboard!');
+        window.open('https://www.linkedin.com/feed/', '_blank');
     }).catch(err => {
         console.error('Failed to copy:', err);
         alert('Failed to copy post to clipboard');
@@ -213,25 +127,22 @@ function downloadSummary() {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
     const symbol = data.asset || data.symbol || 'ANALYSIS';
     
-    // Create formatted summary content
     let summaryContent = `# 5 LLM COUNCIL IN-DEPTH ANALYSIS SUMMARY\n`;
     summaryContent += `Generated: ${new Date().toLocaleString()}\n`;
     summaryContent += `Symbol: ${symbol}\n`;
     summaryContent += `Persona: ${data.persona_selected ? data.persona_selected.toUpperCase() : 'N/A'}\n`;
     summaryContent += `\n${'='.repeat(80)}\n\n`;
     
-    // Add 5 LLM Council Opinions
     summaryContent += `## 5 LLM COUNCIL OPINIONS\n\n`;
-    const agentNames = ['🦅 Macro Hawk', '🔬 Micro Forensic', '💧 Flow Detective', '📊 Tech Interpreter', '🤔 Skeptic'];
+    const agentNames = ['Macro Hawk', 'Micro Forensic', 'Flow Detective', 'Tech Interpreter', 'Skeptic'];
     
     if (data.market_analysis.council_opinions) {
         data.market_analysis.council_opinions.forEach((opinion, index) => {
             summaryContent += `### ${agentNames[index]}\n`;
-            summaryContent += `${opinion}\n\n`;
+            summaryContent += `${opinion.replace(/^[^\s]+\s/, '')}\n\n`;
         });
     }
     
-    // Add Consensus Points
     if (data.market_analysis.consensus && data.market_analysis.consensus.length > 0) {
         summaryContent += `\n## CONSENSUS POINTS\n\n`;
         data.market_analysis.consensus.forEach((point, index) => {
@@ -240,7 +151,6 @@ function downloadSummary() {
         summaryContent += `\n`;
     }
     
-    // Add AI Narrative
     if (data.narrative && (data.narrative.styled_message || data.narrative.summary || data.narrative.moderated_output)) {
         summaryContent += `\n## AI NARRATIVE (${data.persona_selected ? data.persona_selected.toUpperCase() : 'N/A'})\n\n`;
         const narrativeText = data.narrative.styled_message || data.narrative.summary || data.narrative.moderated_output || 'No narrative available';
@@ -249,87 +159,26 @@ function downloadSummary() {
         }
     }
     
-    // Add Trade Statistics
     if (data.trade_history) {
         const th = data.trade_history;
         summaryContent += `\n## TRADE STATISTICS\n\n`;
         summaryContent += `- Total Trades: ${th.total_trades || 0}\n`;
         summaryContent += `- Win Rate: ${th.win_rate !== undefined ? th.win_rate.toFixed(1) : '0.0'}%\n`;
         summaryContent += `- Total P&L: $${th.total_pnl !== undefined ? th.total_pnl.toFixed(2) : '0.00'}\n`;
-        if (th.avg_pnl !== undefined) {
-            summaryContent += `- Average P&L: $${th.avg_pnl.toFixed(2)}\n`;
-        } else if (th.total_trades > 0 && th.total_pnl !== undefined) {
-            summaryContent += `- Average P&L: $${(th.total_pnl / th.total_trades).toFixed(2)}\n`;
-        }
-        if (th.last_trade) {
-            summaryContent += `- Last Trade: ${th.last_trade}\n`;
-        }
-        summaryContent += `\n`;
     }
     
-    // Add Behavioral Analysis
     if (data.behavioral_analysis && data.behavioral_analysis.flags && data.behavioral_analysis.flags.length > 0) {
         summaryContent += `\n## BEHAVIORAL FLAGS\n\n`;
         data.behavioral_analysis.flags.forEach(flag => {
-            summaryContent += `⚠️ ${flag}\n`;
+            summaryContent += `[FLAG] ${flag}\n`;
         });
         summaryContent += `\n`;
     }
     
-    // Add Market Context
     if (data.economic_calendar && data.economic_calendar.summary) {
         summaryContent += `\n## MARKET CONTEXT\n\n${data.economic_calendar.summary}\n\n`;
     }
     
-    // Add Economic Events
-    if (data.economic_calendar && data.economic_calendar.economic_events && data.economic_calendar.economic_events.length > 0) {
-        summaryContent += `\n## UPCOMING ECONOMIC EVENTS\n\n`;
-        data.economic_calendar.economic_events.forEach(event => {
-            // Handle both string and object formats
-            if (typeof event === 'string') {
-                summaryContent += `- ${event}\n`;
-            } else if (typeof event === 'object' && event !== null) {
-                const eventTitle = event.title || event.event || event.name || JSON.stringify(event);
-                summaryContent += `### ${eventTitle}\n`;
-                if (event.time || event.date) {
-                    summaryContent += `- Time: ${event.time || event.date}\n`;
-                }
-                if (event.impact) {
-                    summaryContent += `- Impact: ${event.impact}\n`;
-                }
-                if (event.description) {
-                    summaryContent += `- Description: ${event.description}\n`;
-                }
-                summaryContent += `\n`;
-            }
-        });
-    }
-    
-    // Add Recent News
-    if (data.economic_calendar && data.economic_calendar.recent_news && data.economic_calendar.recent_news.length > 0) {
-        summaryContent += `\n## RECENT NEWS\n\n`;
-        data.economic_calendar.recent_news.forEach((news, index) => {
-            if (news) {
-                // Handle both string and object formats
-                if (typeof news === 'string') {
-                    summaryContent += `${index + 1}. ${news}\n`;
-                } else if (typeof news === 'object' && news !== null) {
-                    const newsText = news.headline || news.title || news.description || news.text || JSON.stringify(news);
-                    summaryContent += `${index + 1}. ${newsText}\n`;
-                    if (news.url || news.link) {
-                        summaryContent += `   Source: ${news.url || news.link}\n`;
-                    }
-                }
-            }
-        });
-        summaryContent += `\n`;
-    }
-    
-    summaryContent += `\n${'='.repeat(80)}\n`;
-    summaryContent += `\nReport generated by TensorTrade AI Trading Analyst\n`;
-    summaryContent += `Powered by 5-Agent LLM Council\n`;
-    
-    // Create blob and download
     const blob = new Blob([summaryContent], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -339,119 +188,32 @@ function downloadSummary() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
-    console.log('Summary downloaded successfully');
 }
 
-const app = document.createElement('div');
-app.id = 'deriv-ai-dashboard';
-app.style.cssText = `
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0a0b12;
-    color: #ffffff;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-`;
+const app = document.getElementById('dashboard-container');
+app.className = 'app-container';
 
-// Add global styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.6; }
-        100% { opacity: 1; }
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .gradient-text {
-        background: linear-gradient(90deg, #ff4444, #ff8888);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .card {
-        background: rgba(18, 20, 30, 0.9);
-        border: 1px solid rgba(255, 68, 68, 0.15);
-        backdrop-filter: blur(10px);
-    }
-    
-    .risk-high { color: #ff4444; }
-    .risk-medium { color: #ffbb44; }
-    .risk-low { color: #44ff88; }
-    
-    .status-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
-    }
-    
-    .status-live { background: #ff4444; animation: pulse 2s infinite; }
-    .status-active { background: #44ff88; }
-    .status-neutral { background: #ffbb44; }
-    
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: rgba(255, 68, 68, 0.1);
-        border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #ff4444;
-        border-radius: 3px;
-    }
-`;
-
-// Load TradingView Lightweight Charts
 const tvScript = document.createElement('script');
 tvScript.src = 'https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js';
 document.head.appendChild(tvScript);
 
-document.head.appendChild(style);
-
-// Header
 const header = document.createElement('header');
-header.style.cssText = `
-    background: rgba(10, 11, 18, 0.95);
-    border-bottom: 1px solid rgba(255, 68, 68, 0.2);
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-`;
+header.className = 'header';
 
 const logoSection = document.createElement('div');
-logoSection.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 20px;
-`;
+logoSection.style.display = 'flex';
+logoSection.style.alignItems = 'center';
+logoSection.style.gap = '20px';
 
 const logo = document.createElement('div');
-logo.innerHTML = `
-    <div style="font-size: 48px; line-height: 1; display: flex; align-items: center; justify-content: center;">🎢</div>
-`;
+logo.className = 'header-logo';
+logo.textContent = '[TENSOR]';
 
 const title = document.createElement('div');
 title.innerHTML = `
     <h1 style="margin: 0; font-size: 24px; font-weight: 800;">
-        <span class="gradient-text">🎢 TENSORTRADE</span>
-        <span style="color: #8899aa; font-size: 14px; font-weight: 400; margin-left: 10px;">INTELLIGENT TRADING ANALYST</span>
+        <span>TENSORTRADE</span>
+        <span style="color: var(--text-color); font-size: 14px; font-weight: 400; margin-left: 10px;">INTELLIGENT TRADING ANALYST</span>
     </h1>
 `;
 
@@ -459,93 +221,45 @@ logoSection.appendChild(logo);
 logoSection.appendChild(title);
 
 const statusIndicator = document.createElement('div');
-statusIndicator.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: #44ff88;
-    background: rgba(68, 255, 136, 0.1);
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid rgba(68, 255, 136, 0.2);
-`;
-
+statusIndicator.className = 'status-indicator';
 statusIndicator.innerHTML = `
-    <span class="status-indicator status-live"></span>
+    <span class="status-dot"></span>
     LIVE MARKETS • REALTIME ANALYSIS
 `;
 
 header.appendChild(logoSection);
 header.appendChild(statusIndicator);
 
-// Main Dashboard Grid
 const dashboardGrid = document.createElement('div');
-dashboardGrid.style.cssText = `
-    display: grid;
-    grid-template-columns: 300px 1fr 400px;
-    gap: 20px;
-    padding: 30px;
-    flex: 1;
-    max-width: 1920px;
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
-`;
+dashboardGrid.className = 'dashboard-grid';
 
-// Left Panel - Analysis Setup
 const leftPanel = document.createElement('div');
-leftPanel.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-`;
+leftPanel.style.display = 'flex';
+leftPanel.style.flexDirection = 'column';
+leftPanel.style.gap = '20px';
 
 const createCard = (title, content, options = {}) => {
     const card = document.createElement('div');
     card.className = 'card';
-    card.style.cssText = `
-        border-radius: 12px;
-        padding: ${options.padding || '24px'};
-        animation: fadeIn 0.5s ease;
-        ${options.minHeight ? `min-height: ${options.minHeight};` : ''}
-        ${options.height ? `height: ${options.height};` : ''}
-    `;
+    if (options.minHeight) card.style.minHeight = options.minHeight;
+    if (options.height) card.style.height = options.height;
+    if (options.padding) card.style.padding = options.padding;
     
     const cardHeader = document.createElement('div');
-    cardHeader.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 1px solid rgba(255, 68, 68, 0.1);
-        padding-bottom: 12px;
-    `;
+    cardHeader.className = 'card-header';
     
     const titleEl = document.createElement('h3');
-    titleEl.style.cssText = `
-        margin: 0;
-        font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        color: #ff8888;
-        font-weight: 600;
-    `;
+    titleEl.className = 'card-title';
     titleEl.textContent = title;
     
     cardHeader.appendChild(titleEl);
     
     if (options.badge) {
         const badge = document.createElement('span');
-        badge.style.cssText = `
-            background: rgba(255, 68, 68, 0.2);
-            color: #ff8888;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            border: 1px solid rgba(255, 68, 68, 0.3);
-        `;
+        badge.style.border = '1px solid var(--text-color)';
+        badge.style.padding = '2px 8px';
+        badge.style.fontSize = '10px';
+        badge.style.fontWeight = '700';
         badge.textContent = options.badge;
         cardHeader.appendChild(badge);
     }
@@ -556,135 +270,109 @@ const createCard = (title, content, options = {}) => {
     return card;
 };
 
-// Assistant Card
 const assistantContent = document.createElement('div');
 assistantContent.innerHTML = `
     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #ff4444, #ff0000); display: flex; align-items: center; justify-content: center; font-size: 28px;">
-            🤖
+        <div style="width: 48px; height: 48px; border: 2px solid var(--text-color); background: var(--bg-color); color: var(--text-color); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700;">
+            [AI]
         </div>
         <div>
-            <div style="font-size: 16px; font-weight: 600; color: #ffffff;">AI Assistant</div>
-            <div id="assistant-status" style="font-size: 12px; color: #8899aa;">Ready for Analysis</div>
+            <div style="font-size: 16px; font-weight: 600; color: var(--text-color);">AI ASSISTANT</div>
+            <div id="assistant-status" style="font-size: 12px; color: var(--text-color);">READY FOR ANALYSIS</div>
         </div>
     </div>
-    <div style="background: rgba(255, 68, 68, 0.05); border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255, 68, 68, 0.1);">
-        <div style="font-size: 12px; color: #ff8888; margin-bottom: 5px;">Asset Symbol:</div>
-        <input id="asset-input" type="text" placeholder="e.g. AAPL, SPY, TSLA" style="width: 100%; padding: 10px; background: rgba(255, 68, 68, 0.1); border: 1px solid rgba(255, 68, 68, 0.2); border-radius: 6px; color: #ffffff; font-size: 13px; margin-bottom: 10px;" value="AAPL">
-        <div style="font-size: 12px; color: #ff8888; margin-bottom: 5px;">User ID (optional):</div>
-        <input id="user-id-input" type="text" placeholder="e.g. trader_123" style="width: 100%; padding: 10px; background: rgba(255, 68, 68, 0.1); border: 1px solid rgba(255, 68, 68, 0.2); border-radius: 6px; color: #ffffff; font-size: 13px; margin-bottom: 15px;" value="dashboard_user">
-
+    <div class="input-group">
+        <div class="input-label">ASSET SYMBOL:</div>
+        <input id="asset-input" type="text" class="input-field" placeholder="e.g. AAPL, SPY, TSLA" value="AAPL">
+    </div>
+    <div class="input-group">
+        <div class="input-label">USER ID:</div>
+        <input id="user-id-input" type="text" class="input-field" placeholder="e.g. trader_123" value="dashboard_user">
+    </div>
+    <div style="margin-bottom: 15px;">
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="demo-mode-toggle" style="accent-color: #ff4444;">
-            <span style="font-size: 13px; color: #8899aa;">Demo Mode (Mock Data)</span>
+            <input type="checkbox" id="demo-mode-toggle" style="accent-color: var(--accent-color);">
+            <span style="font-size: 13px; color: var(--text-color);">DEMO MODE (MOCK DATA)</span>
         </label>
     </div>
-    <button id="analyze-btn" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ff4444, #ff0000); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
-        GENERATE ANALYSIS REPORT
+    <button id="analyze-btn" class="btn-primary" style="width: 100%; font-size: 1rem;">
+        GENERATE REPORT
     </button>
 `;
 
 leftPanel.appendChild(createCard('ASSISTANT', assistantContent));
 
-// Analysis Setup Card (will be updated dynamically)
 const analysisSetupContent = document.createElement('div');
 analysisSetupContent.id = 'analysis-setup-content';
 analysisSetupContent.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 15px;">
         <div>
-            <div style="font-size: 12px; color: #8899aa; margin-bottom: 8px;">MARKET REGIME</div>
+            <div style="font-size: 12px; margin-bottom: 8px;">MARKET REGIME</div>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <div id="market-regime-box" style="padding: 8px 16px; background: rgba(255, 68, 68, 0.2); border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.3);">
-                    <div id="market-regime-text" style="font-size: 18px; font-weight: 700; color: #ff4444;">LOADING...</div>
+                <div id="market-regime-box" style="padding: 8px 16px; border: 1px solid var(--text-color);">
+                    <div id="market-regime-text" style="font-size: 18px; font-weight: 700; color: var(--accent-color);">LOADING...</div>
                 </div>
-                <div id="vix-display" style="font-size: 12px; color: #8899aa; background: rgba(136, 153, 170, 0.1); padding: 4px 10px; border-radius: 6px;">VIX: --</div>
+                <div id="vix-display" style="font-size: 12px; border: 1px solid var(--text-color); padding: 4px 10px;">VIX: --</div>
             </div>
         </div>
         
         <div>
-            <div style="font-size: 12px; color: #8899aa; margin-bottom: 8px;">RISK INDEX</div>
+            <div style="font-size: 12px; margin-bottom: 8px;">RISK INDEX</div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 12px; color: #8899aa;">Current</span>
-                        <span id="risk-index-value" style="font-size: 16px; font-weight: 700; color: #ff4444;">--/100</span>
+                        <span style="font-size: 12px;">CURRENT</span>
+                        <span id="risk-index-value" style="font-size: 16px; font-weight: 700; color: var(--accent-color);">--/100</span>
                     </div>
-                    <div style="height: 8px; background: rgba(255, 68, 68, 0.1); border-radius: 4px; overflow: hidden;">
-                        <div id="risk-index-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff4444, #ff8888); border-radius: 4px; transition: width 0.5s ease;"></div>
+                    <div class="risk-meter-container">
+                        <div id="risk-index-bar" class="risk-meter-fill" style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div id="risk-level-badge" style="text-align: center; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: none;"></div>
+        <div id="risk-level-badge" style="text-align: center; padding: 8px; border: 1px solid var(--text-color); font-size: 11px; font-weight: 600; display: none; margin-top: 10px;"></div>
     </div>
 `;
 
 leftPanel.appendChild(createCard('ANALYSIS SETUP', analysisSetupContent, { minHeight: '300px' }));
 
-// Center Panel - Main Analysis
 const centerPanel = document.createElement('div');
-centerPanel.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-`;
+centerPanel.style.display = 'flex';
+centerPanel.style.flexDirection = 'column';
+centerPanel.style.gap = '20px';
 
-// Market Drivers Card (5 LLM Council Opinions)
 const marketDriversContent = document.createElement('div');
 marketDriversContent.id = 'market-drivers-content';
 marketDriversContent.innerHTML = `
     <div id="council-opinions" style="display: grid; gap: 15px;">
-        <div style="text-align: center; padding: 40px; color: #8899aa;">
-            <div style="font-size: 48px; margin-bottom: 15px;">🤖</div>
-            <div style="font-size: 16px; margin-bottom: 10px;">Awaiting Analysis</div>
-            <div style="font-size: 13px;">Click "GENERATE ANALYSIS REPORT" to run the 5-agent LLM council</div>
+        <div style="text-align: center; padding: 40px; color: var(--text-color);">
+            <div style="font-size: 32px; margin-bottom: 15px;">[WAITING]</div>
+            <div style="font-size: 16px; margin-bottom: 10px;">AWAITING ANALYSIS</div>
+            <div style="font-size: 13px;">CLICK "GENERATE REPORT" TO RUN THE 5-AGENT COUNCIL</div>
         </div>
     </div>
 `;
 
-// Create market drivers card with download button
 const marketDriversCard = createCard('KEY MARKET DRIVERS', marketDriversContent);
-const marketDriversHeader = marketDriversCard.querySelector('h3').parentElement;
+const marketDriversHeader = marketDriversCard.querySelector('.card-header');
 
-// Add download button to the header
 const downloadBtn = document.createElement('button');
 downloadBtn.id = 'download-summary-btn';
-downloadBtn.style.cssText = `
-    background: linear-gradient(135deg, #44ff88, #00cc66);
-    border: none;
-    border-radius: 8px;
-    color: #0a0b12;
-    padding: 8px 16px;
-    font-weight: 600;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-    opacity: 0.5;
-    pointer-events: none;
-`;
-downloadBtn.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="7 10 12 15 17 10"></polyline>
-        <line x1="12" y1="15" x2="12" y2="3"></line>
-    </svg>
-    <span>DOWNLOAD SUMMARY</span>
-`;
+downloadBtn.className = 'btn-primary';
+downloadBtn.style.padding = '4px 12px';
+downloadBtn.style.fontSize = '12px';
+downloadBtn.style.opacity = '0.5';
+downloadBtn.style.pointerEvents = 'none';
+downloadBtn.innerHTML = `<span>DOWNLOAD SUMMARY</span>`;
 downloadBtn.onclick = downloadSummary;
 marketDriversHeader.appendChild(downloadBtn);
 
 centerPanel.appendChild(marketDriversCard);
 
-// Live Intelligence Row (Economic Calendar & Behavioral Analysis)
 const liveIntelligenceRow = document.createElement('div');
-liveIntelligenceRow.style.cssText = `
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 20px;
-`;
+liveIntelligenceRow.style.display = 'grid';
+liveIntelligenceRow.style.gridTemplateColumns = '1fr auto';
+liveIntelligenceRow.style.gap = '20px';
 
 const liveIntelContent = document.createElement('div');
 liveIntelContent.id = 'live-intel-content';
@@ -692,50 +380,32 @@ liveIntelContent.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 15px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <div style="font-size: 14px; font-weight: 600; color: #ffffff;">Live Market Intelligence</div>
-                <div style="font-size: 12px; color: #8899aa;">AI will automatically search for real-time news, sentiment, and fundamental data for selected assets.</div>
+                <div style="font-size: 14px; font-weight: 600;">LIVE MARKET INTELLIGENCE</div>
+                <div style="font-size: 12px;">AI search for real-time news & data.</div>
             </div>
-            <button style="background: linear-gradient(135deg, #ff4444, #ff0000); border: none; border-radius: 8px; color: white; padding: 10px 24px; font-weight: 600; cursor: pointer; font-size: 12px;">
+            <button class="btn-primary" style="padding: 8px 16px; font-size: 12px;">
                 RUN LIVE ANALYSIS
             </button>
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
-            <div style="background: rgba(255, 68, 68, 0.05); border: 1px solid rgba(255, 68, 68, 0.1); border-radius: 8px; padding: 20px;">
+            <div style="border: 1px solid var(--text-color); padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="font-size: 16px; font-weight: 700; color: #ffffff;">SPX500</div>
-                    <div style="font-size: 14px; color: #44ff88;">+0.8%</div>
+                    <div style="font-size: 16px; font-weight: 700;">SPX500</div>
+                    <div style="font-size: 14px; color: var(--text-color);">+0.8%</div>
                 </div>
-                <div style="font-size: 13px; color: #8899aa; line-height: 1.5;">
-                    The index is testing the psychological 7,000 level but faces a DeMARK 'Bar 9' exhaustion signal.
-                </div>
-                <div style="margin-top: 15px; padding: 10px; background: rgba(255, 68, 68, 0.1); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #ff8888; margin-bottom: 5px;">PRESSURE GAUGE</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="flex: 1; height: 6px; background: rgba(255, 68, 68, 0.2); border-radius: 3px; overflow: hidden;">
-                            <div style="width: 58%; height: 100%; background: linear-gradient(90deg, #ff4444, #ff8888);"></div>
-                        </div>
-                        <div style="font-size: 14px; font-weight: 700; color: #ff4444;">58</div>
-                    </div>
+                <div style="font-size: 13px; line-height: 1.5;">
+                    Testing psychological 7,000 level.
                 </div>
             </div>
             
-            <div style="background: rgba(68, 136, 255, 0.05); border: 1px solid rgba(68, 136, 255, 0.1); border-radius: 8px; padding: 20px;">
+            <div style="border: 1px solid var(--text-color); padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="font-size: 16px; font-weight: 700; color: #ffffff;">US100</div>
-                    <div style="font-size: 14px; color: #ff4444;">-1.2%</div>
+                    <div style="font-size: 16px; font-weight: 700;">US100</div>
+                    <div style="font-size: 14px; color: var(--accent-color);">-1.2%</div>
                 </div>
-                <div style="font-size: 13px; color: #8899aa; line-height: 1.5;">
-                    Tech-heavy index under pressure with institutional rotation towards value-oriented cyclicals.
-                </div>
-                <div style="margin-top: 15px; padding: 10px; background: rgba(68, 136, 255, 0.1); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #44aaff; margin-bottom: 5px;">TECHNICAL EXHAUSTION</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="flex: 1; height: 6px; background: rgba(68, 136, 255, 0.2); border-radius: 3px; overflow: hidden;">
-                            <div style="width: 72%; height: 100%; background: linear-gradient(90deg, #44aaff, #4488ff);"></div>
-                        </div>
-                        <div style="font-size: 14px; font-weight: 700; color: #44aaff;">72</div>
-                    </div>
+                <div style="font-size: 13px; line-height: 1.5;">
+                    Tech-heavy index under pressure.
                 </div>
             </div>
         </div>
@@ -743,76 +413,46 @@ liveIntelContent.innerHTML = `
 `;
 
 liveIntelligenceRow.appendChild(createCard('LIVE INTELLIGENCE', liveIntelContent));
-
 centerPanel.appendChild(liveIntelligenceRow);
 
-// Right Panel - Strategy & Matrix
 const rightPanel = document.createElement('div');
-rightPanel.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-`;
+rightPanel.style.display = 'flex';
+rightPanel.style.flexDirection = 'column';
+rightPanel.style.gap = '20px';
 
-// Play Narrative Audio
 function playNarrative() {
     if (!currentAnalysisData || !currentAnalysisData.narrative) return;
-
     const text = currentAnalysisData.narrative.styled_message || currentAnalysisData.narrative.summary;
     if (!text) return;
-
-    // Stop existing speech
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-
-    // Try to find a good voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha'));
-    if (preferredVoice) utterance.voice = preferredVoice;
-
     window.speechSynthesis.speak(utterance);
 }
 
-// AI Strategy Card (Narrative & Summary)
 const strategyContent = document.createElement('div');
 strategyContent.id = 'strategy-content';
 strategyContent.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div id="narrative-output" style="background: rgba(255, 68, 68, 0.05); border: 1px solid rgba(255, 68, 68, 0.1); border-radius: 8px; padding: 20px;">
+        <div id="narrative-output" style="border: 1px solid var(--text-color); padding: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff4444;"></div>
-                    <div style="font-size: 14px; font-weight: 600; color: #ffffff;">AI NARRATIVE</div>
+                    <div style="width: 12px; height: 12px; background: var(--accent-color);"></div>
+                    <div style="font-size: 14px; font-weight: 600;">AI NARRATIVE</div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="playNarrative()" title="Listen" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255, 255, 255, 0.1)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
-                        <span style="font-size: 14px;">🔊</span>
-                    </button>
-                    <button onclick="shareToX()" title="Share on X" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(29, 161, 242, 0.2)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                        <span style="font-size: 12px; color: #ffffff; font-weight: 600;">X</span>
-                    </button>
-                    <button onclick="shareToLinkedIn()" title="Share on LinkedIn" style="background: rgba(0, 119, 181, 0.2); border: 1px solid rgba(0, 119, 181, 0.4); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0, 119, 181, 0.4)';" onmouseout="this.style.background='rgba(0, 119, 181, 0.2)';">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#0077b5">
-                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                        </svg>
-                        <span style="font-size: 12px; color: #ffffff; font-weight: 600;">LinkedIn</span>
-                    </button>
+                    <button onclick="playNarrative()" title="Listen" class="btn-primary" style="padding: 4px 10px; font-size: 12px;">[AUDIO]</button>
+                    <button onclick="shareToX()" title="Share on X" class="btn-primary" style="padding: 4px 10px; font-size: 12px;">[X]</button>
+                    <button onclick="shareToLinkedIn()" title="Share on LinkedIn" class="btn-primary" style="padding: 4px 10px; font-size: 12px;">[LINKEDIN]</button>
                 </div>
             </div>
-            <div style="font-size: 13px; color: #8899aa; line-height: 1.6;">
-                Awaiting analysis... The AI will generate a personalized trading narrative based on your history and market conditions.
+            <div style="font-size: 13px; line-height: 1.6;">
+                Awaiting analysis...
             </div>
         </div>
         
         <div id="consensus-section">
-            <div style="font-size: 12px; color: #8899aa; margin-bottom: 15px;">CONSENSUS POINTS</div>
-            <div id="consensus-list" style="color: #8899aa; font-size: 13px;">
+            <div style="font-size: 12px; margin-bottom: 15px;">CONSENSUS POINTS</div>
+            <div id="consensus-list" style="font-size: 13px;">
                 No consensus data available yet
             </div>
         </div>
@@ -821,18 +461,17 @@ strategyContent.innerHTML = `
 
 rightPanel.appendChild(createCard('AI STRATEGY', strategyContent));
 
-// Asset Impact Matrix (Market Context & Chart)
 const matrixContent = document.createElement('div');
 matrixContent.id = 'matrix-content';
 matrixContent.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 15px;">
-        <div id="chart-container" style="height: 250px; width: 100%; background: rgba(0,0,0,0.2); border-radius: 8px;"></div>
+        <div id="chart-container" style="height: 250px; width: 100%; border: 1px solid var(--text-color);"></div>
 
-        <div id="market-context" style="font-size: 12px; color: #8899aa; margin-bottom: 5px;">
+        <div id="market-context" style="font-size: 12px; margin-bottom: 5px;">
             MARKET CONTEXT - Awaiting data...
         </div>
         <div id="economic-events" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="text-align: center; padding: 20px; color: #8899aa; font-size: 13px;">
+            <div style="text-align: center; padding: 20px; font-size: 13px;">
                 Economic calendar events will appear here after analysis
             </div>
         </div>
@@ -841,7 +480,6 @@ matrixContent.innerHTML = `
 
 rightPanel.appendChild(createCard('ASSET IMPACT MATRIX', matrixContent, { minHeight: '400px' }));
 
-// Chart initialization function
 let chart = null;
 let candleSeries = null;
 
@@ -849,37 +487,32 @@ function initChart() {
     const container = document.getElementById('chart-container');
     if (!container || !window.LightweightCharts) return;
 
-    // Clean up previous chart
     container.innerHTML = '';
 
     chart = LightweightCharts.createChart(container, {
         width: container.clientWidth,
         height: 250,
         layout: {
-            background: { type: 'solid', color: 'transparent' },
-            textColor: '#8899aa',
+            background: { type: 'solid', color: '#ffffff' },
+            textColor: '#000000',
         },
         grid: {
-            vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
-            horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+            vertLines: { color: '#e0e0e0' },
+            horzLines: { color: '#e0e0e0' },
         },
-        timeScale: {
-            borderColor: 'rgba(42, 46, 57, 0.6)',
-        },
-        rightPriceScale: {
-            borderColor: 'rgba(42, 46, 57, 0.6)',
-        },
+        timeScale: { borderColor: '#000000' },
+        rightPriceScale: { borderColor: '#000000' },
     });
 
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#44ff88',
-        downColor: '#ff4444',
-        borderVisible: false,
-        wickUpColor: '#44ff88',
-        wickDownColor: '#ff4444',
+        upColor: '#ffffff',
+        downColor: '#ff0000',
+        borderVisible: true,
+        borderColor: '#000000',
+        wickUpColor: '#000000',
+        wickDownColor: '#ff0000',
     });
 
-    // Generate dummy data for visual effect
     const data = [];
     let price = 100;
     const now = new Date();
@@ -903,7 +536,6 @@ function initChart() {
 
     candleSeries.setData(data);
 
-    // Responsive resize
     new ResizeObserver(entries => {
         if (entries.length === 0 || entries[0].target !== container) { return; }
         const newRect = entries[0].contentRect;
@@ -911,39 +543,37 @@ function initChart() {
     }).observe(container);
 }
 
-// Call initChart after DOM load
 setTimeout(initChart, 1000);
 
-// Behavioral Insights Card (Trade History & Behavioral Flags)
 const behavioralContent = document.createElement('div');
 behavioralContent.id = 'behavioral-content';
 behavioralContent.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 15px;">
-        <div id="behavioral-flags" style="background: rgba(68, 136, 255, 0.05); border: 1px solid rgba(68, 136, 255, 0.1); border-radius: 8px; padding: 15px;">
-            <div style="font-size: 12px; color: #44aaff; margin-bottom: 5px;">BEHAVIORAL FLAGS</div>
-            <div style="font-size: 13px; color: #ffffff; line-height: 1.5;">
-                No behavioral patterns detected yet. Analysis will identify trading psychology issues.
+        <div id="behavioral-flags" style="border: 1px solid var(--text-color); padding: 15px;">
+            <div style="font-size: 12px; color: var(--text-color); margin-bottom: 5px;">BEHAVIORAL FLAGS</div>
+            <div style="font-size: 13px; line-height: 1.5;">
+                No behavioral patterns detected yet.
             </div>
         </div>
         
         <div>
-            <div style="font-size: 12px; color: #8899aa; margin-bottom: 10px;">TRADING STATISTICS</div>
+            <div style="font-size: 12px; margin-bottom: 10px;">TRADING STATISTICS</div>
             <div id="trade-stats" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                <div style="text-align: center; padding: 15px; background: rgba(255, 68, 68, 0.05); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #ff4444;">-</div>
-                    <div style="font-size: 11px; color: #8899aa;">Total Trades</div>
+                <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                    <div style="font-size: 18px; font-weight: 700;">-</div>
+                    <div style="font-size: 11px;">Total Trades</div>
                 </div>
-                <div style="text-align: center; padding: 15px; background: rgba(68, 255, 136, 0.05); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #44ff88;">-</div>
-                    <div style="font-size: 11px; color: #8899aa;">Win Rate</div>
+                <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                    <div style="font-size: 18px; font-weight: 700;">-</div>
+                    <div style="font-size: 11px;">Win Rate</div>
                 </div>
-                <div style="text-align: center; padding: 15px; background: rgba(255, 187, 68, 0.05); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #ffbb44;">$-</div>
-                    <div style="font-size: 11px; color: #8899aa;">Total P&L</div>
+                <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                    <div style="font-size: 18px; font-weight: 700;">$-</div>
+                    <div style="font-size: 11px;">Total P&L</div>
                 </div>
-                <div style="text-align: center; padding: 15px; background: rgba(136, 68, 255, 0.05); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #8844ff;">-</div>
-                    <div style="font-size: 11px; color: #8899aa;">Persona</div>
+                <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                    <div style="font-size: 18px; font-weight: 700;">-</div>
+                    <div style="font-size: 11px;">Persona</div>
                 </div>
             </div>
         </div>
@@ -952,24 +582,12 @@ behavioralContent.innerHTML = `
 
 rightPanel.appendChild(createCard('BEHAVIORAL INSIGHTS', behavioralContent));
 
-// Assemble dashboard
 dashboardGrid.appendChild(leftPanel);
 dashboardGrid.appendChild(centerPanel);
 dashboardGrid.appendChild(rightPanel);
 
-// Footer
 const footer = document.createElement('footer');
-footer.style.cssText = `
-    background: rgba(10, 11, 18, 0.95);
-    border-top: 1px solid rgba(255, 68, 68, 0.2);
-    padding: 20px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: #8899aa;
-    backdrop-filter: blur(10px);
-`;
+footer.className = 'footer';
 
 const footerLeft = document.createElement('div');
 footerLeft.innerHTML = `
@@ -981,22 +599,18 @@ const footerRight = document.createElement('div');
 footerRight.innerHTML = `
     <div style="text-align: right;">
         <div style="margin-bottom: 5px;">Data Sources: Bloomberg • Reuters • MarketWatch • TradingView</div>
-        <div>Last Updated: ${new Date().toLocaleTimeString()} • Next Analysis: 15s</div>
+        <div>Last Updated: ${new Date().toLocaleTimeString()}</div>
     </div>
 `;
 
 footer.appendChild(footerLeft);
 footer.appendChild(footerRight);
 
-// Build app
 app.appendChild(header);
 app.appendChild(dashboardGrid);
 app.appendChild(footer);
 
-// Function to update market metrics dynamically
 function updateMarketMetrics(metrics) {
-    console.log('Updating market metrics:', metrics);
-    
     const regimeText = document.getElementById('market-regime-text');
     const regimeBox = document.getElementById('market-regime-box');
     const vixDisplay = document.getElementById('vix-display');
@@ -1014,59 +628,39 @@ function updateMarketMetrics(metrics) {
     
     if (riskIndexValue && metrics.risk_index !== undefined) {
         riskIndexValue.textContent = `${metrics.risk_index}/100`;
-        
-        // Update risk bar width with animation
         if (riskIndexBar) {
             riskIndexBar.style.width = `${metrics.risk_index}%`;
         }
     }
     
-    // Color coding based on regime
     if (regimeBox && metrics.regime_color) {
-        const color = metrics.regime_color;
-        regimeBox.style.background = `${color}20`;
-        regimeBox.style.borderColor = `${color}40`;
-        if (regimeText) {
-            regimeText.style.color = color;
-        }
+        // Force brutalist colors
+        const color = metrics.risk_index > 50 ? '#ff0000' : '#000000';
+        regimeText.style.color = color;
     }
     
-    // Update risk level badge
     if (riskLevelBadge && metrics.risk_level) {
         riskLevelBadge.style.display = 'block';
         riskLevelBadge.textContent = `RISK LEVEL: ${metrics.risk_level}`;
         
-        // Color based on risk level
         if (metrics.risk_index < 40) {
-            riskLevelBadge.style.background = 'rgba(68, 255, 136, 0.2)';
-            riskLevelBadge.style.border = '1px solid rgba(68, 255, 136, 0.4)';
-            riskLevelBadge.style.color = '#44ff88';
-        } else if (metrics.risk_index < 70) {
-            riskLevelBadge.style.background = 'rgba(255, 215, 0, 0.2)';
-            riskLevelBadge.style.border = '1px solid rgba(255, 215, 0, 0.4)';
-            riskLevelBadge.style.color = '#ffd700';
+            riskLevelBadge.style.background = '#ffffff';
+            riskLevelBadge.style.color = '#000000';
         } else {
-            riskLevelBadge.style.background = 'rgba(255, 68, 68, 0.2)';
-            riskLevelBadge.style.border = '1px solid rgba(255, 68, 68, 0.4)';
-            riskLevelBadge.style.color = '#ff4444';
+            riskLevelBadge.style.background = '#ff0000';
+            riskLevelBadge.style.color = '#ffffff';
         }
     }
 }
 
-// Load initial VIX on page load (optional - can fetch from a simple endpoint)
 async function loadInitialMetrics() {
     try {
-        // Try to fetch initial metrics without asset (can show generic market metrics)
         const response = await fetch(`${API_BASE_URL}/health`);
         if (response.ok) {
-            const healthData = await response.json();
-            console.log('API is healthy:', healthData);
-            
-            // Set initial loading state
             const regimeText = document.getElementById('market-regime-text');
             if (regimeText) {
                 regimeText.textContent = 'AWAITING ANALYSIS';
-                regimeText.style.color = '#8899aa';
+                regimeText.style.color = '#000000';
             }
             const vixDisplay = document.getElementById('vix-display');
             if (vixDisplay) {
@@ -1078,18 +672,31 @@ async function loadInitialMetrics() {
             }
         }
     } catch (error) {
-        console.log('Could not check API health (normal if server is not running)');
+        console.log('Could not check API health');
     }
 }
 
-// Initialize
-document.body.style.cssText = 'margin: 0; padding: 0; background: #0a0b12;';
-document.body.appendChild(app);
+function renderLandingPage() {
+    const landingPage = document.getElementById('landing-page');
+    landingPage.innerHTML = `
+        <h1 class="landing-title">MULTI-AGENT<br>TRADING PSYCHOLOGY</h1>
+        <div class="landing-subtitle">5-LLM COUNCIL ANALYSIS // BEHAVIORAL MATRIX</div>
+        <button id="init-system-btn" class="btn-primary">INITIALIZE SYSTEM</button>
+    `;
 
-// Load initial metrics
+    const initBtn = document.getElementById('init-system-btn');
+    if (initBtn) {
+        initBtn.addEventListener('click', () => {
+            landingPage.style.display = 'none';
+            app.style.display = 'flex';
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+        });
+    }
+}
+
+renderLandingPage();
 setTimeout(loadInitialMetrics, 500);
 
-// API Integration Functions
 async function runAnalysis() {
     if (isAnalyzing) return;
     
@@ -1106,27 +713,21 @@ async function runAnalysis() {
     const analyzeBtn = document.getElementById('analyze-btn');
     const statusEl = document.getElementById('assistant-status');
     
-    // Update UI to show loading state
     analyzeBtn.textContent = 'ANALYZING...';
     analyzeBtn.disabled = true;
-    analyzeBtn.style.opacity = '0.6';
-    statusEl.textContent = 'Initializing agents...';
-    statusEl.style.color = '#ff8888';
+    statusEl.textContent = 'INITIALIZING AGENTS...';
     
-    // Reset council opinions
     document.getElementById('council-opinions').innerHTML = `
-        <div style="text-align: center; padding: 40px; color: #8899aa;">
-            <div style="font-size: 48px; margin-bottom: 15px; animation: pulse 1s infinite;">🤖</div>
-            <div style="font-size: 16px;">Processing real-time data...</div>
+        <div style="text-align: center; padding: 40px; color: var(--text-color);">
+            <div style="font-size: 32px; margin-bottom: 15px; animation: pulse 1s infinite;">[PROCESSING]</div>
+            <div style="font-size: 16px;">PROCESSING REAL-TIME DATA...</div>
         </div>
     `;
 
-    // DEMO MODE HANDLER
     if (isDemo) {
         console.log("Running in DEMO MODE");
-        statusEl.textContent = 'DEMO: Simulating analysis...';
+        statusEl.textContent = 'DEMO: SIMULATING ANALYSIS...';
         
-        // Simulate streaming delays
         const steps = [
             "Fetching market data...",
             "Running Macro Hawk...",
@@ -1138,22 +739,20 @@ async function runAnalysis() {
         ];
 
         for (const step of steps) {
-            statusEl.textContent = step;
-            await new Promise(r => setTimeout(r, 800)); // 800ms delay per step
+            statusEl.textContent = step.toUpperCase();
+            await new Promise(r => setTimeout(r, 800));
         }
         
         const demoData = JSON.parse(JSON.stringify(DEMO_DATA));
-        demoData.asset = asset; // Use entered asset
+        demoData.asset = asset;
         currentAnalysisData = demoData;
 
         updateDashboard(demoData);
-        statusEl.textContent = 'Analysis Complete ✓';
-        statusEl.style.color = '#44ff88';
+        statusEl.textContent = 'ANALYSIS COMPLETE [OK]';
         
         isAnalyzing = false;
-        analyzeBtn.textContent = 'GENERATE ANALYSIS REPORT';
+        analyzeBtn.textContent = 'GENERATE REPORT';
         analyzeBtn.disabled = false;
-        analyzeBtn.style.opacity = '1';
         return;
     }
 
@@ -1174,7 +773,7 @@ async function runAnalysis() {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep incomplete line in buffer
+            buffer = lines.pop();
 
             for (const line of lines) {
                 if (!line.trim()) continue;
@@ -1187,84 +786,67 @@ async function runAnalysis() {
             }
         }
         
-        statusEl.textContent = 'Analysis Complete ✓';
-        statusEl.style.color = '#44ff88';
+        statusEl.textContent = 'ANALYSIS COMPLETE [OK]';
         
     } catch (error) {
         console.error('Analysis failed:', error);
-        statusEl.textContent = 'Analysis Failed';
-        statusEl.style.color = '#ff4444';
+        statusEl.textContent = 'ANALYSIS FAILED';
         alert(`Analysis failed: ${error.message}`);
     } finally {
         isAnalyzing = false;
-        analyzeBtn.textContent = 'GENERATE ANALYSIS REPORT';
+        analyzeBtn.textContent = 'GENERATE REPORT';
         analyzeBtn.disabled = false;
-        analyzeBtn.style.opacity = '1';
     }
 }
 
 function handleStreamEvent(event, statusEl) {
-    console.log("Stream Event:", event);
-
     if (event.type === 'status') {
-        statusEl.textContent = event.message;
+        statusEl.textContent = event.message.toUpperCase();
     }
     else if (event.type === 'agent_result') {
-        // Light up an agent in the council view
         addAgentOpinion(event.agent, event.data);
-    }
-    else if (event.type === 'trade_history') {
-        // Update trade stats partially
-        // (optional: could implement partial UI updates)
     }
     else if (event.type === 'complete' || event.type === 'final_result') {
         currentAnalysisData = event.data;
         updateDashboard(event.data);
-
-        // Cache persona posts
         if (event.data.persona_post) {
             currentPersonaPosts = event.data.persona_post;
         }
     }
     else if (event.type === 'error') {
-        statusEl.textContent = `Error: ${event.message}`;
-        statusEl.style.color = '#ff4444';
+        statusEl.textContent = `ERROR: ${event.message}`;
     }
 }
 
 function addAgentOpinion(agentName, agentData) {
     const councilDiv = document.getElementById('council-opinions');
 
-    // Clear waiting message if it's the first agent
-    if (councilDiv.innerHTML.includes('Awaiting Analysis') || councilDiv.innerHTML.includes('Processing real-time')) {
+    if (councilDiv.innerHTML.includes('AWAITING ANALYSIS') || councilDiv.innerHTML.includes('PROCESSING')) {
         councilDiv.innerHTML = '';
     }
 
-    const agentEmojis = {'🦅 Macro Hawk': '🦅', '🔬 Micro Forensic': '🔬', '💧 Flow Detective': '💧', '📊 Tech Interpreter': '📊', '🤔 Skeptic': '🤔'};
-    const emoji = agentEmojis[agentName] || '🤖';
+    const agentTags = {
+        '🦅 Macro Hawk': '[HAWK]',
+        '🔬 Micro Forensic': '[FORENSIC]',
+        '💧 Flow Detective': '[FLOW]',
+        '📊 Tech Interpreter': '[TECH]',
+        '🤔 Skeptic': '[SKEPTIC]'
+    };
+    const tag = agentTags[agentName] || '[AGENT]';
 
     const div = document.createElement('div');
-    div.style.cssText = `
-        display: flex;
-        gap: 15px;
-        padding: 15px;
-        background: rgba(255, 68, 68, 0.03);
-        border-radius: 8px;
-        border: 1px solid rgba(255, 68, 68, 0.1);
-        animation: fadeIn 0.5s ease;
-        margin-bottom: 15px;
-    `;
+    div.className = 'opinion-item animate-fade-in';
 
     div.innerHTML = `
-        <div style="font-size: 32px; min-width: 50px;">${emoji}</div>
+        <div style="font-size: 14px; font-weight: 700; min-width: 80px;">${tag}</div>
         <div style="flex: 1;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-size: 14px; font-weight: 600; color: #44aaff;">${agentName}</div>
-                <div style="background: rgba(68, 170, 255, 0.1); color: #44aaff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid rgba(68, 170, 255, 0.2);">
+                <div style="font-size: 14px; font-weight: 600;">${agentName.replace(/^[^\s]+\s/, '')}</div>
+                <div style="border: 1px solid var(--text-color); padding: 2px 8px; font-size: 10px; font-weight: 700;">
                     CONFIDENCE: ${agentData.confidence.toUpperCase()}
                 </div>
             </div>
-            <div style="font-size: 13px; color: #ffffff; line-height: 1.6;">${agentData.thesis}</div>
+            <div style="font-size: 13px; line-height: 1.6;">${agentData.thesis}</div>
         </div>
     `;
 
@@ -1272,143 +854,114 @@ function addAgentOpinion(agentName, agentData) {
 }
 
 function updateDashboard(data) {
-    console.log('Updating dashboard with:', data);
-    
-    // Update Market Metrics (VIX, Market Regime, Risk Index)
     if (data.market_metrics) {
         updateMarketMetrics(data.market_metrics);
     }
     
-    // Enable download button
     const downloadBtn = document.getElementById('download-summary-btn');
     if (downloadBtn && data.market_analysis && data.market_analysis.council_opinions) {
         downloadBtn.style.opacity = '1';
         downloadBtn.style.pointerEvents = 'auto';
-        downloadBtn.onmouseover = function() {
-            this.style.background = 'linear-gradient(135deg, #33dd77, #00aa55)';
-            this.style.transform = 'translateY(-2px)';
-        };
-        downloadBtn.onmouseout = function() {
-            this.style.background = 'linear-gradient(135deg, #44ff88, #00cc66)';
-            this.style.transform = 'translateY(0)';
-        };
     }
     
-    // Update 5 LLM Council Opinions
     const councilDiv = document.getElementById('council-opinions');
     if (data.market_analysis && data.market_analysis.council_opinions) {
         const opinions = data.market_analysis.council_opinions;
         councilDiv.innerHTML = opinions.map((opinion, index) => {
-            const agentEmojis = ['🦅', '🔬', '💧', '📊', '🤔'];
-            const agentColors = ['#ff4444', '#44aaff', '#44ff88', '#ffbb44', '#8844ff'];
+            const agentTags = ['[HAWK]', '[FORENSIC]', '[FLOW]', '[TECH]', '[SKEPTIC]'];
             const agentNames = ['Macro Hawk', 'Micro Forensic', 'Flow Detective', 'Tech Interpreter', 'Skeptic'];
+            const cleanOpinion = opinion.replace(/^[^\s]+\s/, '');
+
             return `
-                <div style="display: flex; gap: 15px; padding: 15px; background: rgba(255, 68, 68, 0.03); border-radius: 8px; border: 1px solid rgba(255, 68, 68, 0.1); animation: fadeIn 0.5s ease ${index * 0.1}s both;">
-                    <div style="font-size: 32px; min-width: 50px;">${agentEmojis[index]}</div>
+                <div class="opinion-item animate-fade-in" style="animation-delay: ${index * 0.1}s;">
+                    <div style="font-size: 14px; font-weight: 700; min-width: 80px;">${agentTags[index]}</div>
                     <div style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="font-size: 14px; font-weight: 600; color: ${agentColors[index]};">${agentNames[index]}</div>
-                            <div style="background: ${agentColors[index]}20; color: ${agentColors[index]}; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid ${agentColors[index]}40;">
+                            <div style="font-size: 14px; font-weight: 600;">${agentNames[index]}</div>
+                            <div style="border: 1px solid var(--text-color); padding: 2px 8px; font-size: 10px; font-weight: 700;">
                                 LLM COUNCIL
                             </div>
                         </div>
-                        <div style="font-size: 13px; color: #ffffff; line-height: 1.6;">${opinion}</div>
+                        <div style="font-size: 13px; line-height: 1.6;">${cleanOpinion}</div>
                     </div>
                 </div>
             `;
         }).join('');
     }
     
-    // Update Narrative
     const narrativeDiv = document.getElementById('narrative-output');
     if (data.narrative && data.narrative.styled_message) {
         narrativeDiv.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #44ff88;"></div>
-                    <div style="font-size: 14px; font-weight: 600; color: #ffffff;">AI NARRATIVE (${data.persona_selected.toUpperCase()})</div>
+                    <div style="width: 12px; height: 12px; background: var(--accent-color);"></div>
+                    <div style="font-size: 14px; font-weight: 600;">AI NARRATIVE (${data.persona_selected.toUpperCase()})</div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="playNarrative()" title="Listen" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(255, 255, 255, 0.1)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
-                        <span style="font-size: 14px;">🔊</span>
-                    </button>
-                    <button onclick="shareToX()" title="Share on X" style="background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(29, 161, 242, 0.2)';" onmouseout="this.style.background='rgba(0, 0, 0, 0.8)';">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#1DA1F2">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                        <span style="font-size: 12px; color: #ffffff; font-weight: 600;">X</span>
-                    </button>
-                    <button onclick="shareToLinkedIn()" title="Share on LinkedIn" style="background: rgba(0, 119, 181, 0.2); border: 1px solid rgba(0, 119, 181, 0.4); border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(0, 119, 181, 0.4)';" onmouseout="this.style.background='rgba(0, 119, 181, 0.2)';">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#0077b5">
-                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                        </svg>
-                        <span style="font-size: 12px; color: #ffffff; font-weight: 600;">LinkedIn</span>
-                    </button>
+                    <button onclick="playNarrative()" title="Listen" class="btn-primary" style="padding: 4px 10px; font-size: 12px;">[AUDIO]</button>
+                    <button onclick="shareToX()" title="Share on X" class="btn-primary" style="padding: 4px 10px; font-size: 12px;">[X]</button>
+                    <button onclick="shareToLinkedIn()" title="Share on LinkedIn" class="btn-primary" style="padding: 4px 10px; font-size: 12px;">[LINKEDIN]</button>
                 </div>
             </div>
-            <div style="font-size: 13px; color: #ffffff; line-height: 1.6;">
+            <div style="font-size: 13px; line-height: 1.6;">
                 ${data.narrative.styled_message || data.narrative.summary || 'No narrative generated'}
             </div>
         `;
     }
     
-    // Update Consensus Points
     const consensusList = document.getElementById('consensus-list');
     if (data.market_analysis && data.market_analysis.consensus) {
         consensusList.innerHTML = data.market_analysis.consensus.map(point => `
-            <div style="display: flex; gap: 10px; margin-bottom: 10px; padding: 10px; background: rgba(68, 255, 136, 0.05); border-radius: 6px; border: 1px solid rgba(68, 255, 136, 0.1);">
-                <div style="color: #44ff88; font-size: 16px;">✓</div>
-                <div style="font-size: 13px; color: #ffffff; line-height: 1.5;">${point}</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; padding: 10px; border: 1px solid var(--text-color);">
+                <div style="font-weight: 700; font-size: 14px;">[OK]</div>
+                <div style="font-size: 13px; line-height: 1.5;">${point}</div>
             </div>
         `).join('');
     }
     
-    // Update Trade Statistics
     if (data.trade_history) {
         const th = data.trade_history;
         document.getElementById('trade-stats').innerHTML = `
-            <div style="text-align: center; padding: 15px; background: rgba(255, 68, 68, 0.05); border-radius: 8px;">
-                <div style="font-size: 18px; font-weight: 700; color: #ff4444;">${th.total_trades}</div>
-                <div style="font-size: 11px; color: #8899aa;">Total Trades</div>
+            <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                <div style="font-size: 18px; font-weight: 700;">${th.total_trades}</div>
+                <div style="font-size: 11px;">Total Trades</div>
             </div>
-            <div style="text-align: center; padding: 15px; background: rgba(68, 255, 136, 0.05); border-radius: 8px;">
-                <div style="font-size: 18px; font-weight: 700; color: #44ff88;">${th.win_rate.toFixed(1)}%</div>
-                <div style="font-size: 11px; color: #8899aa;">Win Rate</div>
+            <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                <div style="font-size: 18px; font-weight: 700;">${th.win_rate.toFixed(1)}%</div>
+                <div style="font-size: 11px;">Win Rate</div>
             </div>
-            <div style="text-align: center; padding: 15px; background: rgba(255, 187, 68, 0.05); border-radius: 8px;">
-                <div style="font-size: 18px; font-weight: 700; color: ${th.total_pnl >= 0 ? '#44ff88' : '#ff4444'}">$${th.total_pnl.toFixed(2)}</div>
-                <div style="font-size: 11px; color: #8899aa;">Total P&L</div>
+            <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                <div style="font-size: 18px; font-weight: 700; color: ${th.total_pnl >= 0 ? '#000000' : '#ff0000'}">$${th.total_pnl.toFixed(2)}</div>
+                <div style="font-size: 11px;">Total P&L</div>
             </div>
-            <div style="text-align: center; padding: 15px; background: rgba(136, 68, 255, 0.05); border-radius: 8px;">
-                <div style="font-size: 14px; font-weight: 700; color: #8844ff;">${data.persona_selected.toUpperCase()}</div>
-                <div style="font-size: 11px; color: #8899aa;">Persona</div>
+            <div style="text-align: center; padding: 15px; border: 1px solid var(--text-color);">
+                <div style="font-size: 14px; font-weight: 700;">${data.persona_selected.toUpperCase()}</div>
+                <div style="font-size: 11px;">Persona</div>
             </div>
         `;
     }
     
-    // Update Behavioral Flags
     const behavioralFlags = document.getElementById('behavioral-flags');
     if (data.behavioral_analysis && data.behavioral_analysis.flags) {
         const flags = data.behavioral_analysis.flags;
         if (flags.length > 0) {
             behavioralFlags.innerHTML = `
-                <div style="font-size: 12px; color: #44aaff; margin-bottom: 10px;">BEHAVIORAL FLAGS (${flags.length})</div>
+                <div style="font-size: 12px; margin-bottom: 10px;">BEHAVIORAL FLAGS (${flags.length})</div>
                 ${flags.map(flag => `
-                    <div style="margin-bottom: 10px; padding: 10px; background: rgba(255, 68, 68, 0.1); border-radius: 6px; border: 1px solid rgba(255, 68, 68, 0.2);">
-                        <div style="font-size: 12px; font-weight: 600; color: #ff8888; margin-bottom: 5px;">${flag.pattern || 'Behavioral Pattern'}</div>
-                        <div style="font-size: 13px; color: #ffffff; line-height: 1.5;">${flag.message || flag}</div>
+                    <div style="margin-bottom: 10px; padding: 10px; border: 1px solid var(--accent-color);">
+                        <div style="font-size: 12px; font-weight: 600; color: var(--accent-color); margin-bottom: 5px;">${flag.pattern || 'Pattern'}</div>
+                        <div style="font-size: 13px; line-height: 1.5;">${flag.message || flag}</div>
                     </div>
                 `).join('')}
             `;
         } else {
             behavioralFlags.innerHTML = `
-                <div style="font-size: 12px; color: #44aaff; margin-bottom: 5px;">BEHAVIORAL FLAGS</div>
-                <div style="font-size: 13px; color: #44ff88; line-height: 1.5;">✓ No concerning behavioral patterns detected</div>
+                <div style="font-size: 12px; margin-bottom: 5px;">BEHAVIORAL FLAGS</div>
+                <div style="font-size: 13px; line-height: 1.5;">[OK] No concerning patterns.</div>
             `;
         }
     }
     
-    // Update Market Context and Economic Events
     const marketContext = document.getElementById('market-context');
     const economicEvents = document.getElementById('economic-events');
     
@@ -1416,13 +969,13 @@ function updateDashboard(data) {
         const mc = data.market_analysis.market_context;
         marketContext.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-size: 14px; font-weight: 600; color: #ffffff;">${data.asset}</div>
+                <div style="font-size: 14px; font-weight: 600;">${data.asset}</div>
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <div style="font-size: 14px; color: ${mc.move_direction === 'UP' ? '#44ff88' : '#ff4444'};">
-                        ${mc.move_direction === 'UP' ? '↗' : '↘'} ${mc.change_pct}%
+                    <div style="font-size: 14px; color: ${mc.move_direction === 'UP' ? 'var(--text-color)' : 'var(--accent-color)'}; font-weight: 700;">
+                        ${mc.move_direction === 'UP' ? 'UP' : 'DOWN'} ${mc.change_pct}%
                     </div>
-                    <div style="font-size: 14px; color: #8899aa;">$${mc.price}</div>
-                    <div style="font-size: 12px; color: #8899aa;">Vol: ${Number(mc.volume).toLocaleString()}</div>
+                    <div style="font-size: 14px;">$${mc.price}</div>
+                    <div style="font-size: 12px;">Vol: ${Number(mc.volume).toLocaleString()}</div>
                 </div>
             </div>
         `;
@@ -1430,22 +983,21 @@ function updateDashboard(data) {
     
     if (data.economic_calendar && data.economic_calendar.economic_events) {
         economicEvents.innerHTML = data.economic_calendar.economic_events.map((event, index) => `
-            <div style="padding: 12px; background: rgba(255, 187, 68, 0.05); border-radius: 8px; border: 1px solid rgba(255, 187, 68, 0.1); animation: fadeIn 0.5s ease ${index * 0.1}s both;">
+            <div style="padding: 12px; border: 1px solid var(--text-color); margin-bottom: 8px; animation: fadeIn 0.5s ease ${index * 0.1}s both;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="font-size: 18px;">📅</div>
-                    <div style="font-size: 13px; color: #ffffff;">${event}</div>
+                    <div style="font-size: 14px; font-weight: 700;">[DATE]</div>
+                    <div style="font-size: 13px;">${event}</div>
                 </div>
             </div>
         `).join('');
         
-        // Add recent news if available
         if (data.economic_calendar.recent_news && data.economic_calendar.recent_news.length > 0) {
-            economicEvents.innerHTML += `<div style="margin-top: 15px; font-size: 12px; color: #8899aa; margin-bottom: 10px;">RECENT NEWS</div>`;
+            economicEvents.innerHTML += `<div style="margin-top: 15px; font-size: 12px; margin-bottom: 10px;">RECENT NEWS</div>`;
             data.economic_calendar.recent_news.forEach((news, index) => {
                 if (news.title) {
                     economicEvents.innerHTML += `
-                        <div style="padding: 10px; background: rgba(68, 136, 255, 0.05); border-radius: 8px; border: 1px solid rgba(68, 136, 255, 0.1); margin-bottom: 8px; animation: fadeIn 0.5s ease ${(index + 3) * 0.1}s both;">
-                            <div style="font-size: 12px; color: #44aaff; line-height: 1.5;">${news.title}</div>
+                        <div style="padding: 10px; border: 1px solid var(--text-color); margin-bottom: 8px; animation: fadeIn 0.5s ease ${(index + 3) * 0.1}s both;">
+                            <div style="font-size: 12px; line-height: 1.5;">${news.title}</div>
                         </div>
                     `;
                 }
@@ -1454,27 +1006,6 @@ function updateDashboard(data) {
     }
 }
 
-// Attach event listener to analyze button
-setTimeout(() => {
-    const analyzeBtn = document.getElementById('analyze-btn');
-    if (analyzeBtn) {
-        analyzeBtn.addEventListener('click', runAnalysis);
-    }
-}, 100);
-
-// Simulate live updates
-setInterval(() => {
-    const pressureElements = document.querySelectorAll('[data-pressure]');
-    pressureElements.forEach(el => {
-        const current = parseInt(el.textContent);
-        const change = Math.floor(Math.random() * 5) - 2;
-        const newValue = Math.max(0, Math.min(100, current + change));
-        el.textContent = newValue;
-        
-        // Update progress bar width
-        const bar = el.parentElement?.querySelector('.progress-bar');
-        if (bar) {
-            bar.style.width = `${newValue}%`;
-        }
-    });
-}, 5000);
+if (document.getElementById('analyze-btn')) {
+    document.getElementById('analyze-btn').addEventListener('click', runAnalysis);
+}
