@@ -13,6 +13,7 @@ import re
 from .llm_client import LLMClient
 from .agent_prompts import get_enhanced_system_prompt
 from ..core.config import settings
+from services.self_improvement import SelfImprovementService
 from ..models.schemas import (
     AgentArgument,
     ConsensusPoint,
@@ -87,6 +88,13 @@ class DebateEngine:
             raise ValueError("No valid LLM providers initialized. Check API keys.")
         
         logger.info(f"✓ Initialized {len(self.llm_providers)} agents")
+
+        # Initialize self-improvement service
+        try:
+            self.improvement_service = SelfImprovementService()
+        except Exception as e:
+            logger.warning(f"Could not initialize SelfImprovementService: {e}")
+            self.improvement_service = None
 
     
     async def debate_stream_async(self, symbol: str, economic_context: str = "") -> AsyncGenerator[Dict, None]:
@@ -352,6 +360,16 @@ Consider the economic calendar events when evaluating market drivers.
         
         # Get detailed system prompt for this agent
         system_prompt = get_enhanced_system_prompt(agent_name)
+
+        # Apply self-improvement optimizations
+        if self.improvement_service:
+            try:
+                optimization = self.improvement_service.get_optimized_prompt(agent_name)
+                if optimization:
+                    system_prompt += f"\n\nFEEDBACK ADJUSTMENT: {optimization}"
+                    logger.info(f"Applied optimization for {agent_name}: {optimization}")
+            except Exception as e:
+                logger.warning(f"Failed to apply optimization for {agent_name}: {e}")
         
         # Build detailed user prompt (simplified for better success rate)
         prompt = f"""Analyze {symbol} {move_direction} {abs(move_pct):.2f}% today.

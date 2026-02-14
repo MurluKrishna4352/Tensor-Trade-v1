@@ -240,3 +240,94 @@ button {
 .animate-fade-in {
     animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* Dark Mode Overrides */
+body.dark-mode {
+    --bg-color: #050505;
+    --text-color: #e0e0e0;
+    --accent-color: #00ff41; /* Cyberpunk green */
+}
+
+body.dark-mode .map-block.up {
+    background-color: rgba(0, 255, 65, 0.2);
+    border-color: #00ff41;
+}
+
+body.dark-mode .map-block.down {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-color: #ff0000;
+}
+
+body.dark-mode .btn-primary {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--text-color);
+}
+
+body.dark-mode .btn-primary:hover {
+    background: var(--accent-color);
+    color: #000000;
+    box-shadow: 0 0 10px var(--accent-color);
+}
+
+/* Map Grid Styles */
+.market-map-container {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 40px;
+}
+
+.market-map-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+.map-block {
+    aspect-ratio: 1;
+    border: 1px solid var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 5px;
+    background: var(--bg-color);
+}
+
+.map-block:hover {
+    transform: translateY(-5px);
+    box-shadow: 4px 4px 0 var(--text-color);
+}
+
+.map-block.up {
+    background-color: #e6ffe6;
+}
+
+.map-block.down {
+    background-color: #ffe6e6;
+}
+
+.map-symbol {
+    font-weight: 800;
+    font-size: 1rem;
+    font-family: var(--font-heading);
+}
+
+.map-change {
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+}
+
+/* Toggle Switch */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--text-color);
+    padding: 5px 10px;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}

@@ -22,6 +22,7 @@ from services.economic_calendar import EconomicCalendarService
 from services.trade_history import get_trade_history_service
 from services.market_metrics import get_market_metrics_service
 from services.asset_validator import validate_asset_symbol, AssetValidationError
+from services.self_improvement import SelfImprovementService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,6 +32,9 @@ app = FastAPI(title="Multi-Agent Trading Psychology API")
 # Simple in-memory cache
 ANALYSIS_CACHE = {}
 CACHE_TTL = timedelta(minutes=10)
+
+# Initialize Self-Improvement Service
+self_improvement_service = SelfImprovementService()
 
 def get_cached_analysis(symbol: str) -> Optional[dict]:
     if symbol in ANALYSIS_CACHE:
@@ -305,6 +309,30 @@ async def analyze_asset_stream(asset: str, user_id: Optional[str] = "default_use
                 except Exception as e:
                     logger.error(f"{agent_name} failed: {e}")
 
+            # Record run for self-improvement
+            try:
+                # Extract agent outputs from debate result
+                agent_outputs = {}
+                if "council_debate" in context and "agent_arguments" in context["council_debate"]:
+                    for arg in context["council_debate"]["agent_arguments"]:
+                        # arg might be dict or object
+                        name = arg.get("agent_name") if isinstance(arg, dict) else arg.agent_name
+                        thesis = arg.get("thesis") if isinstance(arg, dict) else arg.thesis
+                        agent_outputs[name] = thesis
+
+                moderation = context.get("moderation", {})
+                # Use X platform verdict as primary for now
+                verdict = moderation.get("x", {})
+
+                self_improvement_service.record_run(
+                    asset=asset,
+                    agent_outputs=agent_outputs,
+                    moderator_verdict=verdict
+                )
+                yield json.dumps({"type": "status", "message": "Self-improvement cycle complete..."}) + "\n"
+            except Exception as e:
+                logger.error(f"Failed to record run: {e}")
+
             # 6. Calculate Metrics
             metrics_service = get_market_metrics_service()
             market_metrics = metrics_service.get_all_metrics(
@@ -456,6 +484,29 @@ async def analyze_asset(asset: str, user_id: Optional[str] = "default_user"):
             except Exception as e:
                 logger.error(f"✗ {agent_name} failed: {e}")
                 context[f"{agent_name}_error"] = str(e)
+
+        # Record run for self-improvement
+        try:
+            # Extract agent outputs from debate result
+            agent_outputs = {}
+            if "council_debate" in context and "agent_arguments" in context["council_debate"]:
+                for arg in context["council_debate"]["agent_arguments"]:
+                    # arg might be dict or object
+                    name = arg.get("agent_name") if isinstance(arg, dict) else arg.agent_name
+                    thesis = arg.get("thesis") if isinstance(arg, dict) else arg.thesis
+                    agent_outputs[name] = thesis
+
+            moderation = context.get("moderation", {})
+            # Use X platform verdict as primary for now
+            verdict = moderation.get("x", {})
+
+            self_improvement_service.record_run(
+                asset=asset,
+                agent_outputs=agent_outputs,
+                moderator_verdict=verdict
+            )
+        except Exception as e:
+            logger.error(f"Failed to record run: {e}")
         
         # 7. Calculate market metrics (VIX, regime, risk index)
         metrics_service = get_market_metrics_service()
@@ -640,6 +691,11 @@ def root():
         }
     }
 
+
+@app.get("/self-improvement/metrics")
+def get_improvement_metrics():
+    """Get self-improvement metrics."""
+    return self_improvement_service.analyze_performance()
 
 @app.get("/health")
 def health_check():

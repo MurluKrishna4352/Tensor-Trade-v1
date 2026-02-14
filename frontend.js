@@ -230,6 +230,24 @@ statusIndicator.innerHTML = `
 header.appendChild(logoSection);
 header.appendChild(statusIndicator);
 
+const themeToggle = document.createElement('button');
+themeToggle.className = 'theme-toggle';
+themeToggle.style.marginLeft = '10px';
+themeToggle.textContent = 'DARK MODE';
+themeToggle.onclick = () => {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    themeToggle.textContent = isDark ? 'LIGHT MODE' : 'DARK MODE';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+};
+
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+    themeToggle.textContent = 'LIGHT MODE';
+}
+
+header.appendChild(themeToggle);
+
 const dashboardGrid = document.createElement('div');
 dashboardGrid.className = 'dashboard-grid';
 
@@ -679,10 +697,51 @@ async function loadInitialMetrics() {
 function renderLandingPage() {
     const landingPage = document.getElementById('landing-page');
     landingPage.innerHTML = `
-        <h1 class="landing-title">MULTI-AGENT<br>TRADING PSYCHOLOGY</h1>
-        <div class="landing-subtitle">5-LLM COUNCIL ANALYSIS // BEHAVIORAL MATRIX</div>
-        <button id="init-system-btn" class="btn-primary">INITIALIZE SYSTEM</button>
+        <h1 class="landing-title">TENSORTRADE<br>MARKET MAP</h1>
+        <div class="landing-subtitle">MULTI-AGENT INTELLIGENCE NETWORK</div>
+
+        <div class="market-map-container">
+             <div id="market-map" class="market-map-grid"></div>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <button id="init-system-btn" class="btn-primary">ENTER DASHBOARD</button>
+        </div>
     `;
+
+    const mapGrid = document.getElementById('market-map');
+    const symbols = [
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "BRK.B", "LLY", "AVGO",
+        "V", "JPM", "XOM", "WMT", "UNH", "MA", "PG", "JNJ", "HD", "COST",
+        "ABBV", "MRK", "KO", "PEP", "BAC", "CVX", "CRM", "AMD", "NFLX", "ADBE",
+        "TMO", "CSCO", "ACN", "MCD", "LIN", "ABT", "DHR", "DIS", "PM", "INTC",
+        "VZ", "INTU", "TXN", "CMCSA", "PFE", "AMGN", "IBM", "UBER", "NEE", "CAT"
+    ];
+
+    symbols.forEach(sym => {
+        const change = (Math.random() * 6 - 3).toFixed(2);
+        const isUp = change >= 0;
+
+        const block = document.createElement('div');
+        block.className = `map-block ${isUp ? 'up' : 'down'}`;
+        block.innerHTML = `
+            <div class="map-symbol">${sym}</div>
+            <div class="map-change">${change > 0 ? '+' : ''}${change}%</div>
+        `;
+
+        block.onclick = () => {
+            document.getElementById('asset-input').value = sym;
+            landingPage.style.display = 'none';
+            app.style.display = 'flex';
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+
+            // Auto-start analysis if user clicks a block
+            // Small delay to ensure UI is ready
+            setTimeout(() => runAnalysis(), 500);
+        };
+
+        mapGrid.appendChild(block);
+    });
 
     const initBtn = document.getElementById('init-system-btn');
     if (initBtn) {
