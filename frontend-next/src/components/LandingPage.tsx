@@ -1,275 +1,205 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { 
-  TrendingUp, 
-  Shield, 
-  Zap, 
-  BarChart3, 
-  Phone, 
-  Bot,
-  CheckCircle2,
-  ArrowRight,
-  Menu,
-  X
-} from 'lucide-react';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
+import { useState } from 'react';
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const features = [
-    {
-      icon: <BarChart3 className="w-8 h-8" />,
-      title: "Portfolio Management",
-      description: "AI-powered portfolio optimization with real-time insights and risk management"
-    },
-    {
-      icon: <Shield className="w-8 h-8" />,
-      title: "Shariah Compliant",
-      description: "Investment options fully compliant with Islamic finance principles"
-    },
-    {
-      icon: <Phone className="w-8 h-8" />,
-      title: "AI Calling Agent",
-      description: "Schedule automated market updates and personalized insights via calls"
-    },
-    {
-      icon: <TrendingUp className="w-8 h-8" />,
-      title: "Live Trading",
-      description: "Real-time trading with IPO listings and market analysis"
-    },
-    {
-      icon: <Bot className="w-8 h-8" />,
-      title: "Multi-Agent System",
-      description: "Self-improving AI agents that learn and adapt from every market move"
-    },
-    {
-      icon: <Zap className="w-8 h-8" />,
-      title: "MCP Server",
-      description: "Model Context Protocol integration for advanced AI capabilities"
-    }
-  ];
-
-  const offerings = [
-    {
-      title: "Dashboard",
-      description: "Complete trading platform with portfolio management, live market data, and AI-powered insights",
-      features: ["Real-time analytics", "Risk management", "Policy tracking", "IPO listings"],
-      cta: "Get Started",
-      link: "/auth/login",
-      highlight: true
-    },
-    {
-      title: "API Service",
-      description: "Enterprise-grade API for market analysis, trading signals, and AI-generated insights",
-      features: ["RESTful API", "WebSocket streams", "99.9% uptime", "Full documentation"],
-      cta: "View API Docs",
-      link: "/api-docs",
-      highlight: false
-    },
-    {
-      title: "MCP Server",
-      description: "Advanced Model Context Protocol server for seamless AI integration",
-      features: ["Plugin architecture", "Custom agents", "Real-time data", "Enterprise support"],
-      cta: "Learn More",
-      link: "/mcp",
-      highlight: false
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-orange-500 selection:text-white">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-black/20 backdrop-blur-md z-50 border-b border-white/10">
+      <nav className="fixed top-0 w-full bg-white border-b-4 border-black z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-8 h-8 text-blue-400" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                TensorTrade
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center">
+              <span className="text-3xl font-black tracking-tighter uppercase">
+                Tensor<span className="text-orange-600">Trade</span>
               </span>
             </div>
             
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-300 hover:text-white transition">Features</a>
-              <a href="#offerings" className="text-gray-300 hover:text-white transition">Products</a>
-              <a href="#api" className="text-gray-300 hover:text-white transition">API</a>
+              <a href="#features" className="text-lg font-bold uppercase hover:bg-orange-600 hover:text-white px-2 py-1 transition-colors">Features</a>
+              <a href="#offerings" className="text-lg font-bold uppercase hover:bg-orange-600 hover:text-white px-2 py-1 transition-colors">Products</a>
               <Link href="/auth/login">
-                <Button variant="outline" size="sm">Login</Button>
+                <button className="text-lg font-bold uppercase border-2 border-black px-6 py-2 hover:bg-black hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  Login
+                </button>
               </Link>
               <Link href="/auth/signup">
-                <Button size="sm">Get Started</Button>
+                <button className="text-lg font-bold uppercase bg-orange-600 text-white border-2 border-black px-6 py-2 hover:bg-white hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  Get Started
+                </button>
               </Link>
             </div>
 
             {/* Mobile Menu Button */}
             <button 
-              className="md:hidden text-white"
+              className="md:hidden p-2 border-2 border-black"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <div className="w-6 h-0.5 bg-black mb-1"></div>
+              <div className="w-6 h-0.5 bg-black mb-1"></div>
+              <div className="w-6 h-0.5 bg-black"></div>
             </button>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-black/40 backdrop-blur-md border-t border-white/10">
-            <div className="px-4 py-4 space-y-3">
-              <a href="#features" className="block text-gray-300 hover:text-white">Features</a>
-              <a href="#offerings" className="block text-gray-300 hover:text-white">Products</a>
-              <a href="#api" className="block text-gray-300 hover:text-white">API</a>
-              <Link href="/auth/login">
-                <Button variant="outline" size="sm" className="w-full mb-2">Login</Button>
-              </Link>
-              <Link href="/auth/signup">
-                <Button size="sm" className="w-full">Get Started</Button>
-              </Link>
-            </div>
+          <div className="md:hidden bg-white border-b-4 border-black p-4 space-y-4">
+            <a href="#features" className="block text-xl font-bold uppercase">Features</a>
+            <a href="#offerings" className="block text-xl font-bold uppercase">Products</a>
+            <Link href="/auth/login" className="block">
+              <button className="w-full text-lg font-bold uppercase border-2 border-black px-6 py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">Login</button>
+            </Link>
+            <Link href="/auth/signup" className="block">
+              <button className="w-full text-lg font-bold uppercase bg-orange-600 text-white border-2 border-black px-6 py-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">Get Started</button>
+            </Link>
           </div>
         )}
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="pt-40 pb-20 px-4 border-b-4 border-black">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            AI-Powered Trading Platform
+          <h1 className="text-6xl md:text-9xl font-black mb-8 uppercase leading-none">
+            AI Powered<br/>
+            <span className="bg-orange-600 text-white px-4">Trading</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Self-improving multi-agent system that analyzes markets, manages portfolios, 
-            and delivers insights like expert analysts
+          <p className="text-xl md:text-2xl font-bold mb-12 max-w-3xl mx-auto uppercase tracking-wide border-l-4 border-black pl-6 text-left md:text-center md:border-none md:pl-0">
+            Self-improving multi-agent system. Analyzes markets. Manages portfolios. Zero emotions. Pure logic.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link href="/auth/signup">
-              <Button size="lg" className="w-full sm:w-auto">
-                Start Trading Now <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <button className="text-xl font-black uppercase bg-black text-white border-4 border-black px-12 py-4 hover:bg-white hover:text-black transition-all shadow-[8px_8px_0px_0px_#FF5722] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_#FF5722]">
+                Start Trading Now
+              </button>
             </Link>
             <Link href="#offerings">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <button className="text-xl font-black uppercase bg-white text-black border-4 border-black px-12 py-4 hover:bg-orange-600 hover:text-white transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 Explore Products
-              </Button>
+              </button>
             </Link>
           </div>
 
           {/* Stats */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8 border-t-4 border-black pt-12">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">$2.5B+</div>
-              <div className="text-gray-400">Assets Managed</div>
+              <div className="text-4xl md:text-6xl font-black mb-2 text-orange-600">$2.5B+</div>
+              <div className="text-sm font-bold uppercase tracking-widest">Assets Managed</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">50K+</div>
-              <div className="text-gray-400">Active Users</div>
+              <div className="text-4xl md:text-6xl font-black mb-2 text-orange-600">50K+</div>
+              <div className="text-sm font-bold uppercase tracking-widest">Active Users</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">99.9%</div>
-              <div className="text-gray-400">Uptime</div>
+              <div className="text-4xl md:text-6xl font-black mb-2 text-orange-600">99.9%</div>
+              <div className="text-sm font-bold uppercase tracking-widest">Uptime</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">24/7</div>
-              <div className="text-gray-400">AI Support</div>
+              <div className="text-4xl md:text-6xl font-black mb-2 text-orange-600">24/7</div>
+              <div className="text-sm font-bold uppercase tracking-widest">AI Support</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="features" className="py-20 px-4 border-b-4 border-black bg-orange-50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white">
+          <h2 className="text-5xl md:text-7xl font-black text-center mb-16 uppercase">
             Powerful Features
           </h2>
-          <p className="text-xl text-gray-400 text-center mb-12">
-            Everything you need for intelligent trading
-          </p>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} hover className="p-6 bg-white/5 backdrop-blur-sm border-white/10">
-                <div className="text-blue-400 mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400">{feature.description}</p>
-              </Card>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { title: "Portfolio Management", desc: "AI optimization. Real-time insights. Risk management." },
+              { title: "Shariah Compliant", desc: "Islamic finance principles. Fully compliant options." },
+              { title: "AI Calling Agent", desc: "Automated updates. Personalized insights via calls." },
+              { title: "Live Trading", desc: "Real-time execution. IPO listings. Market analysis." },
+              { title: "Multi-Agent System", desc: "Self-improving agents. Learn from every move." },
+              { title: "MCP Server", desc: "Model Context Protocol. Advanced AI integration." }
+            ].map((feature, index) => (
+              <div key={index} className="border-4 border-black p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all">
+                <h3 className="text-2xl font-black mb-4 uppercase">{feature.title}</h3>
+                <p className="text-lg font-bold text-gray-800">{feature.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Offerings */}
-      <section id="offerings" className="py-20 px-4 sm:px-6 lg:px-8 bg-black/20">
+      <section id="offerings" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white">
+          <h2 className="text-5xl md:text-7xl font-black text-center mb-16 uppercase">
             Choose Your Path
           </h2>
-          <p className="text-xl text-gray-400 text-center mb-12">
-            Dashboard, API, or MCP Server - we've got you covered
-          </p>
           
           <div className="grid md:grid-cols-3 gap-8">
-            {offerings.map((offering, index) => (
-              <Card 
+            {[
+              {
+                title: "Dashboard",
+                desc: "Complete trading platform.",
+                cta: "Get Started",
+                highlight: true,
+                link: "/auth/login"
+              },
+              {
+                title: "API Service",
+                desc: "Enterprise-grade market analysis.",
+                cta: "View Docs",
+                highlight: false,
+                link: "/api-docs"
+              },
+              {
+                title: "MCP Server",
+                desc: "Advanced AI integration server.",
+                cta: "Learn More",
+                highlight: false,
+                link: "/mcp"
+              }
+            ].map((offering, index) => (
+              <div
                 key={index} 
-                hover 
-                className={`p-8 ${offering.highlight ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/50' : 'bg-white/5 backdrop-blur-sm border-white/10'}`}
+                className={`border-4 border-black p-8 flex flex-col justify-between ${offering.highlight ? 'bg-orange-600 text-white' : 'bg-white text-black'} shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]`}
               >
-                <h3 className="text-2xl font-bold text-white mb-3">{offering.title}</h3>
-                <p className="text-gray-400 mb-6">{offering.description}</p>
-                
-                <ul className="space-y-3 mb-8">
-                  {offering.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center text-gray-300">
-                      <CheckCircle2 className="w-5 h-5 text-green-400 mr-2" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+                <div>
+                  <h3 className={`text-3xl font-black mb-6 uppercase ${offering.highlight ? 'text-white' : 'text-black'}`}>{offering.title}</h3>
+                  <p className={`text-xl font-bold mb-8 ${offering.highlight ? 'text-white' : 'text-gray-800'}`}>{offering.desc}</p>
+                </div>
                 
                 <Link href={offering.link}>
-                  <Button 
-                    variant={offering.highlight ? "primary" : "outline"} 
-                    className="w-full"
-                  >
+                  <button className={`w-full text-xl font-black uppercase border-4 border-black py-4 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${offering.highlight ? 'bg-white text-black hover:bg-black hover:text-white' : 'bg-orange-600 text-white hover:bg-black'}`}>
                     {offering.cta}
-                  </Button>
+                  </button>
                 </Link>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section className="py-20 px-4 border-t-4 border-black bg-black text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to Transform Your Trading?
+          <h2 className="text-5xl md:text-7xl font-black mb-8 uppercase">
+            Ready to <span className="text-orange-600">Transform?</span>
           </h2>
-          <p className="text-xl text-gray-400 mb-8">
-            Join thousands of traders using AI to make smarter decisions
-          </p>
           <Link href="/auth/signup">
-            <Button size="lg">
-              Get Started Free <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+            <button className="text-xl font-black uppercase bg-orange-600 text-white border-4 border-white px-12 py-6 hover:bg-white hover:text-black transition-all shadow-[8px_8px_0px_0px_#FFFFFF] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[4px_4px_0px_0px_#FFFFFF]">
+              Get Started Free
+            </button>
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center text-gray-400">
-          <p>&copy; 2026 TensorTrade. All rights reserved.</p>
-          <div className="mt-4 space-x-6">
-            <a href="#" className="hover:text-white transition">Privacy</a>
-            <a href="#" className="hover:text-white transition">Terms</a>
-            <a href="#" className="hover:text-white transition">Contact</a>
-          </div>
+      <footer className="border-t-4 border-black py-12 px-4 bg-white">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-xl font-black uppercase">&copy; 2026 TensorTrade.</p>
         </div>
       </footer>
     </div>
