@@ -30,6 +30,7 @@ export const Chart: React.FC<ChartProps> = ({ data }) => {
     chartRef.current = chart;
 
     try {
+      // @ts-ignore - addCandlestickSeries exists in lightweight-charts v5
       const candlestickSeries = chart.addCandlestickSeries({
         upColor: '#ffffff',
         downColor: '#ff4500', // Orange-ish red for down
