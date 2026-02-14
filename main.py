@@ -175,6 +175,34 @@ class RunAgentsRequest(BaseModel):
     persona_style: str = "professional"
 
 
+class CallScheduleRequest(BaseModel):
+    user_id: str
+    phone_number: str
+    first_call_at: str
+    call_type: str = "daily_summary"
+    frequency: str = "daily"
+    asset: Optional[str] = None
+    timezone: str = "UTC"
+
+
+class OutboundCallRequest(BaseModel):
+    user_id: str
+    phone_number: str
+    message: str
+    call_type: str = "market_update"
+    asset: Optional[str] = None
+
+
+class InboundCallRequest(BaseModel):
+    user_id: str
+    phone_number: str
+    transcript: str
+    asset: Optional[str] = None
+
+
+calling_service = CallingAgent()
+
+
 @app.get("/analyze-asset-stream")
 async def analyze_asset_stream(asset: str, user_id: Optional[str] = "default_user"):
     """
@@ -699,6 +727,9 @@ def root():
             "/analyze-asset": "🚀 NEW - Simplified analysis (asset only)",
             "/run-agents": "Full agent pipeline (custom inputs)",
             "/health": "Health check",
+            "/calls/schedule": "Create scheduled outbound call",
+            "/calls/inbound": "Handle user-initiated inbound call",
+            "/calls/outbound": "Trigger immediate outbound call",
             "/docs": "API documentation"
         },
         "agents": {
@@ -711,7 +742,7 @@ def root():
             "ModeratorAgent": "Final moderation",
             "ComplianceAgent": "Checks for regulatory flags (SEC/FINRA)",
             "ShariahComplianceAgent": "Evaluates assets for Shariah compliance",
-            "CallingAgent": "Executes trades and generates market calls"
+            "CallingAgent": "Two-way calling + scheduling for market updates"
         },
         "features": {
             "economic_calendar": "Automated earnings and economic event tracking",
@@ -719,6 +750,78 @@ def root():
             "auto_persona": "Intelligent persona selection based on performance"
         }
     }
+
+
+
+
+@app.post("/calls/schedule")
+def schedule_market_call(request: CallScheduleRequest):
+    """Schedule recurring or one-time outbound calls with market updates."""
+    first_call_at = datetime.fromisoformat(request.first_call_at)
+    schedule = calling_service.schedule_call(
+        user_id=request.user_id,
+        phone_number=request.phone_number,
+        first_call_at=first_call_at,
+        call_type=request.call_type,
+        frequency=request.frequency,
+        asset=request.asset,
+        timezone=request.timezone,
+    )
+    return {"message": "Call schedule created", "schedule": schedule}
+
+
+@app.get("/calls/schedule/{user_id}")
+def list_call_schedules(user_id: str):
+    """List active call schedules for a user."""
+    return {"user_id": user_id, "schedules": calling_service.list_schedules(user_id)}
+
+
+@app.delete("/calls/schedule/{user_id}/{schedule_id}")
+def cancel_call_schedule(user_id: str, schedule_id: str):
+    """Cancel an existing call schedule."""
+    result = calling_service.cancel_schedule(schedule_id, user_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=404, detail=result["message"])
+    return result
+
+
+@app.post("/calls/outbound")
+def trigger_outbound_call(request: OutboundCallRequest):
+    """Trigger an immediate outbound call from the agent to the user."""
+    log = calling_service.trigger_outbound_call(
+        user_id=request.user_id,
+        phone_number=request.phone_number,
+        message=request.message,
+        call_type=request.call_type,
+        asset=request.asset,
+    )
+    return {"message": "Outbound call executed", "call": log}
+
+
+@app.post("/calls/inbound")
+def handle_inbound_call(request: InboundCallRequest):
+    """Handle a user initiated inbound call into the agent."""
+    log = calling_service.handle_inbound_call(
+        user_id=request.user_id,
+        phone_number=request.phone_number,
+        transcript=request.transcript,
+        asset=request.asset,
+    )
+    return {"message": "Inbound call handled", "call": log}
+
+
+@app.post("/calls/process-due")
+def process_due_calls(now_iso: Optional[str] = None):
+    """Process due schedules (intended for cron/background execution)."""
+    now = datetime.fromisoformat(now_iso) if now_iso else datetime.utcnow()
+    executed = calling_service.process_due_calls(now=now)
+    return {"processed": len(executed), "calls": executed}
+
+
+@app.get("/calls/logs/{user_id}")
+def get_call_logs(user_id: str):
+    """Retrieve inbound/outbound call history for a user."""
+    return {"user_id": user_id, "logs": calling_service.get_call_logs(user_id)}
 
 
 @app.get("/self-improvement/metrics")
