@@ -17,5 +17,9 @@ yfinance>=0.2.0
 beautifulsoup4>=4.12.0
 lxml>=5.0.0
 
+# Voice calling dependencies
+twilio>=9.0.0
+elevenlabs>=2.0.0
+
 # For development
 pytest>=7.4.0

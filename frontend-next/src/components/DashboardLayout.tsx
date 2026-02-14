@@ -34,9 +34,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navigation = [
     { name: 'Portfolio', href: '/dashboard' },
+    { name: 'Analyze', href: '/dashboard/analyze' },
     { name: 'Trading', href: '/dashboard/trading' },
     { name: 'Policies', href: '/dashboard/policies' },
     { name: 'Investments', href: '/dashboard/investments' },
+    { name: 'Voice Agent', href: '/dashboard/voice' },
     { name: 'Calling Agent', href: '/dashboard/calling-agent' },
   ];
 

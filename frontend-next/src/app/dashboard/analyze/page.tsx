@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { SearchIcon, TrendingUpIcon, TrendingDownIcon, AlertCircleIcon, CheckCircleIcon, DownloadIcon, Share2Icon, Volume2Icon } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 interface AgentOpinion {
   agentName: string;
@@ -69,7 +71,8 @@ const DEMO_DATA = {
 };
 
 export default function AnalyzePage() {
-  const [asset, setAsset] = useState('');
+  const searchParams = useSearchParams();
+  const [asset, setAsset] = useState(searchParams.get('asset') || '');
   const [userId, setUserId] = useState('user_123');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [statusMessage, setStatusMessage] = useState('Ready to analyze');
@@ -82,10 +85,18 @@ export default function AnalyzePage() {
     calendar: true,
   });
 
-  const API_BASE_URL = typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:8000'
-    : '';
+  // Auto-run analysis if asset was provided via URL
+  useEffect(() => {
+    const urlAsset = searchParams.get('asset');
+    if (urlAsset && !isAnalyzing && !analysisData) {
+      setAsset(urlAsset.toUpperCase());
+      // Small delay to let state settle
+      const timer = setTimeout(() => {
+        runAnalysisForAsset(urlAsset.toUpperCase());
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const executeDemoSimulation = async () => {
     console.log("Running in DEMO MODE");
@@ -128,8 +139,8 @@ export default function AnalyzePage() {
     setIsAnalyzing(false);
   };
 
-  const runAnalysis = async () => {
-    if (!asset) {
+  const runAnalysisForAsset = async (assetSymbol: string) => {
+    if (!assetSymbol) {
       alert('Please enter an asset symbol');
       return;
     }
@@ -141,7 +152,7 @@ export default function AnalyzePage() {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/analyze-asset-stream?asset=${encodeURIComponent(asset)}&user_id=${encodeURIComponent(userId)}`
+        `${API_BASE_URL}/analyze-asset-stream?asset=${encodeURIComponent(assetSymbol)}&user_id=${encodeURIComponent(userId)}`
       );
 
       if (!response.ok) {
@@ -182,6 +193,10 @@ export default function AnalyzePage() {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const runAnalysis = async () => {
+    await runAnalysisForAsset(asset);
   };
 
   const handleStreamEvent = (event: any) => {

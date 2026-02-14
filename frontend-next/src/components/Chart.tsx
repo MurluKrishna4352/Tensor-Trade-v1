@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { createChart, ColorType } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 
 interface ChartProps {
   data?: any[]; // Allow flexibility for demo data
@@ -14,7 +14,7 @@ export const Chart: React.FC<ChartProps> = ({ data }) => {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart: any = createChart(chartContainerRef.current, {
+    const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: '#ffffff' },
         textColor: '#000000',
@@ -30,10 +30,9 @@ export const Chart: React.FC<ChartProps> = ({ data }) => {
     chartRef.current = chart;
 
     try {
-      // @ts-ignore - addCandlestickSeries exists in lightweight-charts v5
-      const candlestickSeries = chart.addCandlestickSeries({
+      const candlestickSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#ffffff',
-        downColor: '#ff4500', // Orange-ish red for down
+        downColor: '#ff4500',
         borderVisible: true,
         wickUpColor: '#000000',
         wickDownColor: '#ff4500',

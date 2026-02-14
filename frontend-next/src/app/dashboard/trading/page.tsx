@@ -3,10 +3,17 @@
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { API_BASE_URL } from '@/lib/api';
 
 export default function TradingPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('stocks');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const goToAnalyze = (symbol: string) => {
+    router.push(`/dashboard/analyze?asset=${symbol}`);
+  };
 
   const stocks = [
     { symbol: 'AAPL', name: 'Apple Inc.', price: 175.43, change: 2.3, volume: '54.2M', marketCap: '2.7T', shariah: true },
@@ -121,7 +128,10 @@ export default function TradingPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <Button size="sm">TRADE</Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button size="sm" onClick={() => goToAnalyze(stock.symbol)}>ANALYZE</Button>
+                          <Button size="sm" variant="outline">TRADE</Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -196,7 +206,10 @@ export default function TradingPage() {
                       {stock.change > 0 ? '+' : ''}{stock.change}%
                     </div>
                   </div>
-                  <Button size="sm">TRADE</Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => goToAnalyze(stock.symbol)}>ANALYZE</Button>
+                    <Button size="sm" variant="outline">TRADE</Button>
+                  </div>
                 </div>
               ))}
             </div>

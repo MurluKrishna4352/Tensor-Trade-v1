@@ -2,71 +2,109 @@
 
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { API_BASE_URL, apiFetch } from '@/lib/api';
 
 export default function CallingAgentPage() {
-  const [schedules, setSchedules] = useState([
-    {
-      id: 1,
-      name: 'Weekly Market Update',
-      frequency: 'Every Tuesday',
-      time: '09:00 AM',
-      timezone: 'EST',
-      topics: ['Market summary', 'Portfolio performance', 'Top movers'],
-      active: true,
-      nextCall: '2026-02-18 09:00',
-      lastCall: '2026-02-11 09:00'
-    },
-    {
-      id: 2,
-      name: 'Daily Brief',
-      frequency: 'Every Weekday',
-      time: '06:30 AM',
-      timezone: 'EST',
-      topics: ['Pre-market analysis', 'Economic calendar', 'Your watchlist'],
-      active: true,
-      nextCall: '2026-02-15 06:30',
-      lastCall: '2026-02-14 06:30'
-    },
-    {
-      id: 3,
-      name: 'Monthly Review',
-      frequency: '1st of every month',
-      time: '10:00 AM',
-      timezone: 'EST',
-      topics: ['Monthly performance', 'Portfolio rebalancing', 'Tax optimization'],
-      active: false,
-      nextCall: '2026-03-01 10:00',
-      lastCall: '2026-02-01 10:00'
-    },
-  ]);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [callHistory, setCallHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [userId] = useState('dashboard_user');
 
-  const callHistory = [
-    {
-      date: '2026-02-14',
-      time: '06:30 AM',
-      duration: '4m 32s',
-      type: 'Daily Brief',
-      topics: 'Pre-market analysis, Tech sector surge',
-      sentiment: 'Bullish'
-    },
-    {
-      date: '2026-02-11',
-      time: '09:00 AM',
-      duration: '8m 15s',
-      type: 'Weekly Market Update',
-      topics: 'Portfolio +3.2%, NVDA breakout',
-      sentiment: 'Positive'
-    },
-    {
-      date: '2026-02-13',
-      time: '06:30 AM',
-      duration: '3m 48s',
-      type: 'Daily Brief',
-      topics: 'Market consolidation, Economic data',
-      sentiment: 'Neutral'
-    },
-  ];
+  // -- New schedule form state --
+  const [showNewSchedule, setShowNewSchedule] = useState(false);
+  const [newPhone, setNewPhone] = useState('');
+  const [newFrequency, setNewFrequency] = useState('daily');
+  const [newCallType, setNewCallType] = useState('daily_summary');
+  const [newAsset, setNewAsset] = useState('');
+  const [newTimezone, setNewTimezone] = useState('UTC');
+
+  // -- Immediate call state --
+  const [immediatePhone, setImmediatePhone] = useState('');
+  const [immediateMessage, setImmediateMessage] = useState('');
+  const [immediateAsset, setImmediateAsset] = useState('AAPL');
+  const [callInProgress, setCallInProgress] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [schedulesRes, logsRes] = await Promise.all([
+        apiFetch(`/calls/schedule/${userId}`),
+        apiFetch(`/calls/logs/${userId}`),
+      ]);
+      setSchedules(schedulesRes.schedules || []);
+      setCallHistory(logsRes.logs || []);
+    } catch (err: any) {
+      console.error('Failed to load calling data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateSchedule = async () => {
+    try {
+      const firstCallAt = new Date(Date.now() + 60000).toISOString();
+      await apiFetch('/calls/schedule', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          phone_number: newPhone,
+          first_call_at: firstCallAt,
+          call_type: newCallType,
+          frequency: newFrequency,
+          asset: newAsset || undefined,
+          timezone: newTimezone,
+        }),
+      });
+      setShowNewSchedule(false);
+      setNewPhone('');
+      setNewAsset('');
+      await loadData();
+    } catch (err: any) {
+      alert('Failed to create schedule: ' + err.message);
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!confirm('Delete this schedule?')) return;
+    try {
+      await apiFetch(`/calls/schedule/${userId}/${scheduleId}`, { method: 'DELETE' });
+      await loadData();
+    } catch (err: any) {
+      alert('Failed to delete: ' + err.message);
+    }
+  };
+
+  const handleImmediateCall = async () => {
+    if (!immediatePhone) { alert('Enter a phone number'); return; }
+    setCallInProgress(true);
+    try {
+      const result = await apiFetch('/calls/outbound', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: userId,
+          phone_number: immediatePhone,
+          message: immediateMessage || `Market update for ${immediateAsset}`,
+          call_type: 'market_update',
+          asset: immediateAsset || undefined,
+        }),
+      });
+      alert('Call triggered successfully!');
+      setImmediatePhone('');
+      setImmediateMessage('');
+      await loadData();
+    } catch (err: any) {
+      alert('Call failed: ' + err.message);
+    } finally {
+      setCallInProgress(false);
+    }
+  };
 
   const aiCapabilities = [
     {
@@ -94,9 +132,97 @@ export default function CallingAgentPage() {
           <div>
             <h2 className="text-2xl font-bold uppercase">AI Calling Agent</h2>
             <p className="text-sm mt-1">SCHEDULE AUTOMATED MARKET UPDATES VIA VOICE CALLS</p>
+            <p className="text-xs mt-1 text-gray-600">Connected to: {API_BASE_URL}</p>
           </div>
-          <Button>NEW SCHEDULE</Button>
+          <Button onClick={() => setShowNewSchedule(!showNewSchedule)}>
+            {showNewSchedule ? 'CANCEL' : 'NEW SCHEDULE'}
+          </Button>
         </div>
+
+        {error && (
+          <div className="border-4 border-red-600 p-4 bg-red-50 text-red-800 font-bold">
+            BACKEND ERROR: {error}
+          </div>
+        )}
+
+        {loading && (
+          <div className="text-center p-8 font-bold">LOADING FROM BACKEND...</div>
+        )}
+
+        {/* New Schedule Form */}
+        {showNewSchedule && (
+          <Card className="p-6 border-8 border-black">
+            <h3 className="text-xl font-bold uppercase mb-4 border-b-4 border-black pb-3">Create New Schedule</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-bold uppercase text-xs mb-2">Phone Number *</label>
+                <input type="tel" value={newPhone} onChange={e => setNewPhone(e.target.value)}
+                  className="w-full px-4 py-3 border-4 border-black font-bold text-sm" placeholder="+1234567890" />
+              </div>
+              <div>
+                <label className="block font-bold uppercase text-xs mb-2">Asset (optional)</label>
+                <input type="text" value={newAsset} onChange={e => setNewAsset(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 border-4 border-black font-bold text-sm" placeholder="AAPL" />
+              </div>
+              <div>
+                <label className="block font-bold uppercase text-xs mb-2">Frequency</label>
+                <select value={newFrequency} onChange={e => setNewFrequency(e.target.value)}
+                  className="w-full px-4 py-3 border-4 border-black font-bold text-sm">
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="once">One-time</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold uppercase text-xs mb-2">Call Type</label>
+                <select value={newCallType} onChange={e => setNewCallType(e.target.value)}
+                  className="w-full px-4 py-3 border-4 border-black font-bold text-sm">
+                  <option value="daily_summary">Daily Summary</option>
+                  <option value="market_update">Market Update</option>
+                  <option value="portfolio_review">Portfolio Review</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold uppercase text-xs mb-2">Timezone</label>
+                <select value={newTimezone} onChange={e => setNewTimezone(e.target.value)}
+                  className="w-full px-4 py-3 border-4 border-black font-bold text-sm">
+                  <option value="UTC">UTC</option>
+                  <option value="US/Eastern">US Eastern</option>
+                  <option value="US/Pacific">US Pacific</option>
+                  <option value="Asia/Dubai">Dubai</option>
+                  <option value="Europe/London">London</option>
+                </select>
+              </div>
+            </div>
+            <Button onClick={handleCreateSchedule} className="mt-4 w-full">CREATE SCHEDULE</Button>
+          </Card>
+        )}
+
+        {/* Immediate Call */}
+        <Card className="p-6 border-8 border-black">
+          <h3 className="text-xl font-bold uppercase mb-4 border-b-4 border-black pb-3">Request Immediate Call</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block font-bold uppercase text-xs mb-2">Phone Number *</label>
+              <input type="tel" value={immediatePhone} onChange={e => setImmediatePhone(e.target.value)}
+                className="w-full px-4 py-3 border-4 border-black font-bold text-sm" placeholder="+1234567890" />
+            </div>
+            <div>
+              <label className="block font-bold uppercase text-xs mb-2">Asset</label>
+              <input type="text" value={immediateAsset} onChange={e => setImmediateAsset(e.target.value.toUpperCase())}
+                className="w-full px-4 py-3 border-4 border-black font-bold text-sm" placeholder="AAPL" />
+            </div>
+            <div>
+              <label className="block font-bold uppercase text-xs mb-2">Message (optional)</label>
+              <input type="text" value={immediateMessage} onChange={e => setImmediateMessage(e.target.value)}
+                className="w-full px-4 py-3 border-4 border-black font-bold text-sm" placeholder="Custom message..." />
+            </div>
+          </div>
+          <Button onClick={handleImmediateCall} className="mt-4" disabled={callInProgress}>
+            {callInProgress ? 'CALLING...' : 'TRIGGER CALL NOW'}
+          </Button>
+        </Card>
 
         {/* AI Capabilities */}
         <Card className="p-6 border-8 border-black">
@@ -111,114 +237,93 @@ export default function CallingAgentPage() {
           </div>
         </Card>
 
-        {/* Scheduled Calls */}
+        {/* Active Schedules */}
         <div>
-          <h3 className="text-xl font-bold uppercase mb-4">Your Call Schedules</h3>
+          <h3 className="text-xl font-bold uppercase mb-4">Your Call Schedules ({schedules.length})</h3>
+          {schedules.length === 0 && !loading ? (
+            <Card className="p-6 text-center">
+              <p className="font-bold">No schedules yet. Create one above!</p>
+            </Card>
+          ) : (
           <div className="space-y-4">
-            {schedules.map((schedule) => (
-              <Card key={schedule.id} className="p-6">
+            {schedules.map((schedule: any, idx: number) => (
+              <Card key={schedule.schedule_id || idx} className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-lg font-bold uppercase">{schedule.name}</h4>
-                      <span className={`px-3 py-1 font-bold text-xs border-2 border-black ${
-                        schedule.active ? 'bg-black text-white' : 'bg-white text-black'
-                      }`}>
-                        {schedule.active ? 'ACTIVE' : 'PAUSED'}
+                      <h4 className="text-lg font-bold uppercase">
+                        {schedule.call_type || 'Scheduled Call'}
+                      </h4>
+                      <span className="px-3 py-1 font-bold text-xs border-2 border-black bg-black text-white">
+                        {schedule.frequency || 'ACTIVE'}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm mt-3">
                       <div>
-                        <span className="font-bold">FREQUENCY:</span> {schedule.frequency}
+                        <span className="font-bold">PHONE:</span> {schedule.phone_number}
                       </div>
                       <div>
-                        <span className="font-bold">TIME:</span> {schedule.time} {schedule.timezone}
+                        <span className="font-bold">ASSET:</span> {schedule.asset || 'General'}
+                      </div>
+                      <div>
+                        <span className="font-bold">TIMEZONE:</span> {schedule.timezone || 'UTC'}
+                      </div>
+                      <div>
+                        <span className="font-bold">NEXT:</span> {schedule.next_call_at || 'N/A'}
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="border-t-4 border-black pt-4 mt-4">
-                  <h5 className="font-bold uppercase text-sm mb-2">TOPICS COVERED</h5>
-                  <div className="flex flex-wrap gap-2">
-                    {schedule.topics.map((topic, index) => (
-                      <span key={index} className="px-3 py-1 border-2 border-black text-xs font-bold">
-                        {topic}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t-4 border-black pt-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="font-bold uppercase text-xs mb-1">NEXT CALL</div>
-                      <div>{schedule.nextCall}</div>
-                    </div>
-                    <div>
-                      <div className="font-bold uppercase text-xs mb-1">LAST CALL</div>
-                      <div>{schedule.lastCall}</div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex gap-2 mt-4">
-                  <Button size="sm" className="flex-1">
-                    {schedule.active ? 'PAUSE' : 'ACTIVATE'}
+                  <Button size="sm" variant="outline"
+                    onClick={() => handleDeleteSchedule(schedule.schedule_id)}>
+                    DELETE
                   </Button>
-                  <Button size="sm" variant="outline">EDIT</Button>
-                  <Button size="sm" variant="outline">DELETE</Button>
                 </div>
               </Card>
             ))}
           </div>
+          )}
         </div>
 
         {/* Call History */}
         <Card className="p-6">
-          <h3 className="text-xl font-bold uppercase mb-6 border-b-4 border-black pb-3">Call History</h3>
+          <h3 className="text-xl font-bold uppercase mb-6 border-b-4 border-black pb-3">
+            Call History ({callHistory.length})
+          </h3>
+          {callHistory.length === 0 && !loading ? (
+            <p className="text-center font-bold py-4">No call history yet.</p>
+          ) : (
           <div className="space-y-4">
-            {callHistory.map((call, index) => (
+            {callHistory.map((call: any, index: number) => (
               <div key={index} className="border-4 border-black p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <div className="font-bold uppercase">{call.type}</div>
-                    <div className="text-sm mt-1">{call.date} at {call.time}</div>
+                    <div className="font-bold uppercase">{call.call_type || call.type || 'Call'}</div>
+                    <div className="text-sm mt-1">{call.direction || ''} — {call.phone_number || ''}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold">{call.duration}</div>
-                    <div className="text-xs">DURATION</div>
+                    <div className="font-bold">{call.timestamp || call.date || ''}</div>
+                    <div className="text-xs">
+                      {call.duration ? `Duration: ${call.duration}` : ''}
+                    </div>
                   </div>
                 </div>
-                <div className="border-t-2 border-black pt-3">
-                  <div className="text-sm mb-2"><span className="font-bold">TOPICS:</span> {call.topics}</div>
-                  <div className="text-sm">
-                    <span className="font-bold">SENTIMENT:</span> 
-                    <span className="px-2 py-1 ml-2 border-2 border-black font-bold text-xs bg-black text-white">
-                      {call.sentiment.toUpperCase()}
-                    </span>
+                {call.message && (
+                  <div className="border-t-2 border-black pt-3">
+                    <div className="text-sm"><span className="font-bold">MESSAGE:</span> {call.message}</div>
                   </div>
-                </div>
+                )}
+                {call.response_summary && (
+                  <div className="text-sm mt-1">
+                    <span className="font-bold">RESPONSE:</span> {call.response_summary}
+                  </div>
+                )}
               </div>
             ))}
           </div>
+          )}
         </Card>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-6 border-4 border-black hover:bg-black hover:text-white cursor-pointer">
-            <h4 className="font-bold uppercase mb-2">REQUEST IMMEDIATE CALL</h4>
-            <p className="text-sm">Get instant market update</p>
-          </Card>
-          <Card className="p-6 border-4 border-black hover:bg-black hover:text-white cursor-pointer">
-            <h4 className="font-bold uppercase mb-2">MANAGE PREFERENCES</h4>
-            <p className="text-sm">Customize call settings</p>
-          </Card>
-          <Card className="p-6 border-4 border-black hover:bg-black hover:text-white cursor-pointer">
-            <h4 className="font-bold uppercase mb-2">VIEW ALL RECORDINGS</h4>
-            <p className="text-sm">Access call archive</p>
-          </Card>
-        </div>
       </div>
   );
 }

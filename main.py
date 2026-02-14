@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional, AsyncGenerator
 import asyncio
 import logging
 import json
+import os
 from datetime import datetime, timedelta
 
 # Import agents
@@ -28,6 +29,15 @@ from services.trade_history import get_trade_history_service
 from services.market_metrics import get_market_metrics_service
 from services.asset_validator import validate_asset_symbol, AssetValidationError
 from services.self_improvement import SelfImprovementService
+from services.voice_service import (
+    generate_speech,
+    generate_speech_stream,
+    make_twilio_call,
+    build_market_update_script,
+    get_voice_config_status,
+    is_elevenlabs_configured,
+    is_twilio_configured,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -199,6 +209,22 @@ class InboundCallRequest(BaseModel):
     transcript: str
     asset: Optional[str] = None
 
+
+class LiveCallRequest(BaseModel):
+    """Request to place a live voice call to the user's phone."""
+    user_id: str = "default_user"
+    phone_number: str  # User enters on screen
+    asset: str = "AAPL"
+
+
+class VoiceUpdateRequest(BaseModel):
+    """Request to generate a voice audio update (for browser playback)."""
+    user_id: str = "default_user"
+    asset: str = "AAPL"
+
+
+# ── In-memory audio cache for Twilio TwiML playback ─────────
+_audio_cache: Dict[str, bytes] = {}
 
 calling_service = CallingAgent()
 
@@ -829,6 +855,264 @@ def get_improvement_metrics():
     """Get self-improvement metrics."""
     return self_improvement_service.analyze_performance()
 
+
+# ═══════════════════════════════════════════════════════════════
+#  LIVE VOICE CALL ENDPOINTS  (ElevenLabs TTS + Twilio)
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/voice/config")
+def voice_config():
+    """Return which voice services are configured."""
+    return get_voice_config_status()
+
+
+@app.post("/voice/generate-audio")
+async def voice_generate_audio(request: VoiceUpdateRequest):
+    """
+    Generate a spoken market update for browser playback.
+    1. Run quick analysis on the asset
+    2. Build a spoken script
+    3. Convert to audio via ElevenLabs
+    Returns MP3 audio bytes.
+    """
+    asset = request.asset.upper().strip()
+    logger.info(f"Voice audio request for {asset}")
+
+    # Quick analysis context (reuse cache if available)
+    context = await _get_analysis_context(asset, request.user_id)
+    script = build_market_update_script(context)
+    logger.info(f"Voice script ({len(script)} chars): {script[:120]}…")
+
+    if not is_elevenlabs_configured():
+        # Return the script as JSON so the frontend can use browser TTS
+        return {
+            "mode": "browser_tts",
+            "script": script,
+            "message": "ElevenLabs not configured – use browser speech synthesis",
+        }
+
+    audio_bytes = await generate_speech(script)
+    if audio_bytes is None:
+        return {
+            "mode": "browser_tts",
+            "script": script,
+            "message": "ElevenLabs TTS failed – falling back to browser speech",
+        }
+
+    return Response(
+        content=audio_bytes,
+        media_type="audio/mpeg",
+        headers={
+            "Content-Disposition": f'inline; filename="{asset}_update.mp3"',
+            "X-Voice-Script": script[:200],
+        },
+    )
+
+
+@app.post("/voice/generate-audio-stream")
+async def voice_generate_audio_stream(request: VoiceUpdateRequest):
+    """
+    Stream spoken market update audio chunks for real-time playback.
+    """
+    asset = request.asset.upper().strip()
+    context = await _get_analysis_context(asset, request.user_id)
+    script = build_market_update_script(context)
+
+    if not is_elevenlabs_configured():
+        raise HTTPException(status_code=503, detail="ElevenLabs not configured")
+
+    async def audio_stream():
+        async for chunk in generate_speech_stream(script):
+            yield chunk
+
+    return StreamingResponse(
+        audio_stream(),
+        media_type="audio/mpeg",
+        headers={"X-Voice-Script": script[:200]},
+    )
+
+
+@app.post("/voice/live-call")
+async def voice_live_call(request: LiveCallRequest):
+    """
+    Place a real phone call to the user and speak a market update.
+    Flow:
+    1. Generate analysis for the asset
+    2. Build spoken script
+    3. Convert to audio via ElevenLabs
+    4. Store audio temporarily
+    5. Call user's phone via Twilio, pointing to our TwiML endpoint
+    """
+    asset = request.asset.upper().strip()
+    phone = request.phone_number.strip()
+    logger.info(f"Live call request: {phone} for {asset}")
+
+    if not phone:
+        raise HTTPException(status_code=400, detail="Phone number is required")
+
+    # Generate analysis + script
+    context = await _get_analysis_context(asset, request.user_id)
+    script = build_market_update_script(context)
+
+    # Generate audio
+    audio_bytes = None
+    if is_elevenlabs_configured():
+        audio_bytes = await generate_speech(script)
+
+    if not is_twilio_configured():
+        # No Twilio → return script + audio for browser playback
+        result = {
+            "success": True,
+            "mode": "browser",
+            "message": "Twilio not configured – playing update in browser instead",
+            "script": script,
+            "has_audio": audio_bytes is not None,
+        }
+        if audio_bytes:
+            import base64
+            result["audio_base64"] = base64.b64encode(audio_bytes).decode()
+        return result
+
+    # Store audio for Twilio webhook
+    call_id = f"{request.user_id}_{asset}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+    if audio_bytes:
+        _audio_cache[call_id] = audio_bytes
+
+    # Build the TwiML URL  (Twilio will fetch this when the call connects)
+    # In production, use your public domain. For dev, use ngrok or similar.
+    base_url = os.getenv("BASE_URL", "http://localhost:8000")
+    twiml_url = f"{base_url}/voice/twiml/{call_id}"
+
+    # Place the call
+    call_result = make_twilio_call(
+        to_number=phone,
+        twiml_url=twiml_url,
+    )
+
+    if not call_result["success"]:
+        # Twilio failed – fall back to browser
+        result = {
+            "success": True,
+            "mode": "browser_fallback",
+            "message": f"Phone call failed ({call_result['error']}) – playing in browser",
+            "script": script,
+            "has_audio": audio_bytes is not None,
+        }
+        if audio_bytes:
+            import base64
+            result["audio_base64"] = base64.b64encode(audio_bytes).decode()
+        return result
+
+    # Log the call
+    calling_service.trigger_outbound_call(
+        user_id=request.user_id,
+        phone_number=phone,
+        message=script[:200],
+        call_type="live_voice_call",
+        asset=asset,
+    )
+
+    return {
+        "success": True,
+        "mode": "phone_call",
+        "message": f"Calling {phone} now with your {asset} market update!",
+        "call_sid": call_result.get("call_sid"),
+        "script": script,
+    }
+
+
+@app.get("/voice/twiml/{call_id}")
+async def voice_twiml(call_id: str):
+    """
+    Serves TwiML to Twilio when the call connects.
+    If we have cached audio, play it. Otherwise use Twilio's <Say>.
+    """
+    from xml.etree.ElementTree import Element, SubElement, tostring
+
+    response_el = Element("Response")
+
+    if call_id in _audio_cache:
+        # Serve audio via a Play tag pointing to our audio endpoint
+        base_url = os.getenv("BASE_URL", "http://localhost:8000")
+        play_el = SubElement(response_el, "Play")
+        play_el.text = f"{base_url}/voice/audio/{call_id}"
+    else:
+        # Fallback: use Twilio's built-in TTS
+        say_el = SubElement(response_el, "Say", voice="Polly.Matthew")
+        say_el.text = "Hello, this is TensorTrade. We could not generate the audio update. Please check the app for your market analysis. Goodbye."
+
+    twiml_xml = tostring(response_el, encoding="unicode")
+    return Response(content=twiml_xml, media_type="application/xml")
+
+
+@app.get("/voice/audio/{call_id}")
+async def voice_audio(call_id: str):
+    """Serve cached ElevenLabs audio to Twilio during a call."""
+    if call_id not in _audio_cache:
+        raise HTTPException(status_code=404, detail="Audio not found")
+
+    audio = _audio_cache.pop(call_id)  # Serve once, then clean up
+    return Response(content=audio, media_type="audio/mpeg")
+
+
+async def _get_analysis_context(asset: str, user_id: str = "default_user") -> dict:
+    """
+    Helper to get analysis context for voice scripts.
+    Uses cache if available, otherwise runs a quick analysis.
+    """
+    import os
+
+    cached = get_cached_analysis(asset)
+    if cached:
+        return cached
+
+    # Run minimal analysis for voice update
+    context = {"asset": asset, "user_id": user_id}
+
+    try:
+        # Market metrics
+        metrics_service = get_market_metrics_service()
+        market_metrics = metrics_service.get_comprehensive_metrics(asset)
+        context["market_metrics"] = {
+            "risk_index": market_metrics.get("risk_index"),
+            "risk_level": metrics_service.get_risk_level_description(market_metrics.get("risk_index", 50)),
+            "market_regime": market_metrics.get("market_regime"),
+            "vix": market_metrics.get("vix"),
+        }
+        context["current_price"] = market_metrics.get("current_price")
+        context["price_change_pct"] = market_metrics.get("price_change_pct")
+        context["move_direction"] = market_metrics.get("move_direction")
+    except Exception as e:
+        logger.warning(f"Voice context – market metrics failed: {e}")
+
+    try:
+        # Quick council analysis (non-streaming)
+        council_result = await get_council_analysis(asset)
+        context["market_analysis"] = {
+            "council_opinions": council_result.get("opinions", []),
+            "consensus": council_result.get("consensus", []),
+            "market_context": council_result.get("market_context", {}),
+        }
+    except Exception as e:
+        logger.warning(f"Voice context – council analysis failed: {e}")
+
+    try:
+        # Risk
+        risk_agent = RiskManagerAgent()
+        context = risk_agent.run(context)
+    except Exception as e:
+        logger.warning(f"Voice context – risk agent failed: {e}")
+
+    try:
+        # Narrator
+        narrator = NarratorAgent()
+        context = narrator.run(context)
+    except Exception as e:
+        logger.warning(f"Voice context – narrator failed: {e}")
+
+    return context
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint with environment diagnostics."""
@@ -860,7 +1144,9 @@ def health_check():
             "persona": "operational" if has_llm_access else "degraded - no API keys",
             "moderator": "operational",
             "economic_calendar": "operational",
-            "trade_history": "operational (synthetic)"
+            "trade_history": "operational (synthetic)",
+            "voice_elevenlabs": "operational" if is_elevenlabs_configured() else "not configured",
+            "voice_twilio": "operational" if is_twilio_configured() else "not configured",
         }
     }
 
