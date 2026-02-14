@@ -104,29 +104,29 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 border-b-4 border-black bg-[url('/grid.svg')] bg-fixed">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="min-h-screen pt-32 pb-20 border-b-4 border-black bg-[url('/grid.svg')] bg-fixed flex items-center">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
                 <div className="inline-block bg-black text-white px-4 py-1 text-sm font-bold uppercase mb-6 tracking-widest border-2 border-orange-600">
                     Version 2.0 Now Live
                 </div>
                 <h1 className="text-6xl md:text-8xl font-black mb-8 uppercase leading-[0.9] tracking-tighter">
-                    Algorithmic<br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600" style={{ WebkitTextStroke: '2px black' }}>Dominance</span>
+                    AI POWERED<br/>
+                    <span className="bg-orange-600 text-white px-4 inline-block">TRADING</span>
                 </h1>
                 <p className="text-xl md:text-2xl font-bold mb-12 max-w-xl uppercase tracking-wide border-l-4 border-orange-600 pl-6 text-gray-800">
-                    Deploy autonomous multi-agent systems to analyze, predict, and execute trades with zero latency and pure logic.
+                    Self-improving multi-agent system. Analyzes markets. Manages portfolios. Zero emotions. Pure logic.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6">
                     <Link href="/auth/signup">
                     <button className="w-full sm:w-auto text-xl font-black uppercase bg-black text-white border-4 border-black px-12 py-4 hover:bg-white hover:text-black transition-all shadow-[8px_8px_0px_0px_#FF5722] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none">
-                        Initialize System
+                        Start Trading Now
                     </button>
                     </Link>
-                    <Link href="/mcp">
+                    <Link href="#offerings">
                     <button className="w-full sm:w-auto text-xl font-black uppercase bg-white text-black border-4 border-black px-12 py-4 hover:bg-orange-50 hover:text-orange-600 transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none flex items-center justify-center gap-2">
-                        View Protocol <ArrowRight className="w-6 h-6" />
+                        Explore Products
                     </button>
                     </Link>
                 </div>
@@ -170,20 +170,54 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Ticker */}
-      <div className="border-b-4 border-black bg-orange-600 text-white overflow-hidden py-3">
-        <div className="animate-marquee whitespace-nowrap flex gap-12 text-xl font-bold uppercase tracking-widest">
-            <span>System Status: <span className="text-black">OPERATIONAL</span></span>
-            <span>///</span>
-            <span>Active Agents: <span className="text-black">12,402</span></span>
-            <span>///</span>
-            <span>Trades Executed: <span className="text-black">8.4M+</span></span>
-            <span>///</span>
-            <span>Total Volume: <span className="text-black">$2.5B+</span></span>
-            <span>///</span>
-            <span>Next Halving: <span className="text-black">782 Days</span></span>
-             <span>///</span>
-             <span>API Latency: <span className="text-black">12ms</span></span>
+      <div className="border-b-4 border-black bg-orange-600 text-white overflow-hidden py-3 relative">
+        <div className="flex animate-scroll">
+            <div className="flex gap-12 text-xl font-bold uppercase tracking-widest whitespace-nowrap px-6">
+                <span>System Status: <span className="text-black">OPERATIONAL</span></span>
+                <span>///</span>
+                <span>Active Agents: <span className="text-black">12,402</span></span>
+                <span>///</span>
+                <span>Trades Executed: <span className="text-black">8.4M+</span></span>
+                <span>///</span>
+                <span>Total Volume: <span className="text-black">$2.5B+</span></span>
+                <span>///</span>
+                <span>Next Halving: <span className="text-black">782 Days</span></span>
+                <span>///</span>
+                <span>API Latency: <span className="text-black">12ms</span></span>
+                <span>///</span>
+            </div>
+            {/* Duplicate for seamless loop */}
+            <div className="flex gap-12 text-xl font-bold uppercase tracking-widest whitespace-nowrap px-6">
+                <span>System Status: <span className="text-black">OPERATIONAL</span></span>
+                <span>///</span>
+                <span>Active Agents: <span className="text-black">12,402</span></span>
+                <span>///</span>
+                <span>Trades Executed: <span className="text-black">8.4M+</span></span>
+                <span>///</span>
+                <span>Total Volume: <span className="text-black">$2.5B+</span></span>
+                <span>///</span>
+                <span>Next Halving: <span className="text-black">782 Days</span></span>
+                <span>///</span>
+                <span>API Latency: <span className="text-black">12ms</span></span>
+                <span>///</span>
+            </div>
         </div>
+        <style jsx>{`
+          @keyframes scroll {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          .animate-scroll {
+            animation: scroll 40s linear infinite;
+          }
+          .animate-scroll:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
       </div>
 
       {/* Scroll Animation Section - Apple-style MVP Video */}
